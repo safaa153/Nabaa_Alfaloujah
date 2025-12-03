@@ -26,11 +26,11 @@ export const TanksUI = {
                 title: title,
                 text: message,
                 confirmButtonText: 'حسناً',
-                confirmButtonColor: '#ef476f', // Uses new danger color
+                confirmButtonColor: '#ef476f',
                 customClass: { popup: 'rounded-2xl' }
             });
         } else {
-            alert(title + "\n" + message);
+            alert(message);
         }
     },
 
@@ -44,96 +44,72 @@ export const TanksUI = {
                 timer: 1500,
                 customClass: { popup: 'rounded-2xl' }
             });
-        } else {
-            alert(message);
         }
     },
 
+    // --- RENDER LOGIC ---
     renderTable: function(tanks) {
         const container = this.gridContainer;
-        if(!container) return;
-        container.innerHTML = '';
+        if (!container) return;
         
-        if (!tanks) {
-            this.loadingState.classList.remove('hidden');
-            this.emptyState.classList.add('hidden');
-            return;
-        }
+        container.innerHTML = '';
         this.loadingState.classList.add('hidden');
 
-        if (tanks.length === 0) {
+        if (!tanks || tanks.length === 0) {
             this.emptyState.classList.remove('hidden');
             return;
-        } else {
-            this.emptyState.classList.add('hidden');
         }
+        this.emptyState.classList.add('hidden');
 
-        tanks.forEach((tank, index) => {
-            const isActive = tank.is_active !== false;
-            // Append "Liters" to the number
-            const displayName = `${tank.name} لتر`;
+        tanks.forEach(tank => {
+            const isActive = tank.is_active !== false; // Default true
+            const statusClass = isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500';
+            const statusText = isActive ? 'فعال' : 'غير فعال';
 
-            // Card background and styling remains clean white
             const card = document.createElement('div');
-            card.className = 'tank-card bg-white rounded-3xl p-6 border border-gray-100 relative overflow-hidden group';
+            card.className = "tank-card bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:border-cyan-100";
             
             card.innerHTML = `
-                <!-- Top Right Accent Circle (Updated to a fresh Teal) -->
-                <div class="absolute -right-6 -top-6 w-24 h-24 bg-teal-50 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-
-                <div class="flex justify-between items-start mb-4 relative z-10">
-                    <!-- Status Badge: Uses new success/active green -->
-                    <div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                        <div class="w-2.5 h-2.5 rounded-full ${isActive ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-gray-300'}"></div>
-                        <span class="text-xs font-bold ${isActive ? 'text-green-700' : 'text-gray-400'}">
-                            ${isActive ? 'فعال' : 'غير فعال'}
-                        </span>
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 to-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+                
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center text-2xl shadow-sm group-hover:bg-cyan-600 group-hover:text-white transition-colors duration-300">
+                        <i class="ph-fill ph-cylinder cylinder-icon"></i>
                     </div>
-                    <span class="text-xs font-mono text-gray-300">#${index + 1}</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold ${statusClass}">
+                        ${statusText}
+                    </span>
                 </div>
 
-                <div class="flex flex-col items-center text-center mb-6 relative z-10">
-                    <!-- Cylinder Icon: Updated to Cyan/Teal Gradient for water theme -->
-                    <div class="w-16 h-16 mb-4 cylinder-icon flex items-center justify-center bg-gradient-to-br from-cyan-100 to-teal-100 rounded-2xl text-cyan-700 shadow-md border border-cyan-200">
-                        <i class="ph-fill ph-cylinder text-3xl"></i>
+                <h3 class="text-xl font-bold text-gray-800 mb-1">${tank.name}</h3>
+                <p class="text-sm text-gray-400 font-medium mb-4">السعة / اللتر</p>
+                
+                <div class="space-y-3 mb-6">
+                    <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
+                        <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-users text-blue-500"></i> المشتركين</span>
+                        <span class="font-bold text-gray-800">${tank.customer_count || 0}</span>
                     </div>
-                    
-                    <h3 class="text-2xl font-bold text-gray-800 mb-1 font-mono">${displayName}</h3>
-                    
-                    <div class="flex items-center gap-4 text-sm text-gray-500 mt-2">
-                        <!-- Filling Days Badge: Updated to Teal colors -->
-                        <span class="flex items-center gap-1 bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md">
-                            <i class="ph-bold ph-calendar-blank"></i> ${tank.filling_days} يوم
-                        </span>
-                        <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
-                        <span class="font-bold text-gray-900">
-                            ${Number(tank.price).toLocaleString()} <span class="text-xs font-normal text-gray-400">د.ع</span>
-                        </span>
+                    <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
+                        <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-money text-green-500"></i> السعر</span>
+                        <span class="font-bold text-gray-800">${parseInt(tank.price).toLocaleString()} <span class="text-[10px] text-gray-400">د.ع</span></span>
                     </div>
                 </div>
 
-                <!-- Footer: Actions -->
-                <div class="border-t border-gray-50 pt-4 flex items-center justify-between relative z-10">
-                    
-                    <!-- View Customers Button: Updated to Sky Blue for action emphasis -->
-                    <button type="button" 
-                           class="btn-view-customers flex items-center gap-2 text-sm font-bold text-sky-600 hover:text-sky-800 transition-colors bg-sky-50 hover:bg-sky-100 px-3 py-2 rounded-xl"
-                           data-id="${tank.id}"
-                           title="عرض قائمة الزبائن">
-                        <i class="ph-fill ph-users"></i>
-                        <span>${tank.customer_count || 0} زبون</span>
-                    </button>
+                <div class="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto">
+                    <span class="text-xs font-bold text-gray-400">الإجراءات</span>
+                    <div class="flex gap-2">
+                         <!-- NEW: View Customers Button -->
+                         <button class="btn-customers w-9 h-9 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center" 
+                                data-id="${tank.id}" title="عرض المشتركين">
+                            <i class="ph-bold ph-users"></i>
+                        </button>
 
-                    <div class="flex items-center gap-2">
-                         <button type="button" 
-                                class="btn-edit w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-cyan-600 hover:text-white transition-all"
+                         <button class="btn-edit w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm flex items-center justify-center" 
                                 data-id="${tank.id}" title="تعديل">
                             <i class="ph-bold ph-pencil-simple"></i>
                         </button>
                         
-                        <!-- Delete Button: Uses Red for warning -->
-                        <button type="button" 
-                                class="btn-delete w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
+                        <button class="btn-delete w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm flex items-center justify-center" 
                                 data-id="${tank.id}" title="حذف">
                             <i class="ph-bold ph-trash"></i>
                         </button>
@@ -141,6 +117,13 @@ export const TanksUI = {
                 </div>
             `;
             container.appendChild(card);
+        });
+
+        // Add Event Listeners for buttons
+        container.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Triggered in main.js via event delegation or custom event
+            });
         });
     },
 
@@ -169,8 +152,6 @@ export const TanksUI = {
         this.inputs.name.value = tank.name;
         this.inputs.price.value = tank.price;
         this.inputs.days.value = tank.filling_days;
-        if(this.inputs.status) {
-            this.inputs.status.value = (tank.is_active !== false) ? "true" : "false";
-        }
+        this.inputs.status.value = (tank.is_active !== false) ? "true" : "false";
     }
 };

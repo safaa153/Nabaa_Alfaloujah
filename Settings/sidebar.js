@@ -1,16 +1,10 @@
 // Settings/sidebar.js
-/**
- * sidebar.js
- * Generates the sidebar menu dynamically.
- * This global component is shared across all panels.
- */
-
 export const Sidebar = {
-    // Define all your menu items here
     menuItems: [
         { id: 'overview', label: 'الرئيسية', icon: 'ph-house', link: 'overview.html' },
         { id: 'tanks',    label: 'الخزانات', icon: 'ph-cylinder', link: 'tanks.html' },
         { id: 'drivers',  label: 'السائقين', icon: 'ph-truck', link: 'drivers.html' },
+        { id: 'cars',     label: 'السيارات', icon: 'ph-car', link: 'cars.html' },
         { id: 'regions',  label: 'المناطق',   icon: 'ph-map-pin', link: 'areas.html' },
         { id: 'customers',label: 'الزبائن',   icon: 'ph-users', link: '#' },
         { id: 'late',     label: 'الزبائن المتأخرين', icon: 'ph-clock-counter-clockwise', link: '#' },
@@ -22,9 +16,6 @@ export const Sidebar = {
         { id: 'tracking', label: 'تتبع السائقين', icon: 'ph-crosshair', link: '#' },
     ],
 
-    /**
-     * Renders the sidebar into the <nav> element
-     */
     render: function(activePageId) {
         const navContainer = document.getElementById('sidebar-nav');
         if (!navContainer) return;
@@ -42,9 +33,6 @@ export const Sidebar = {
         }).join('');
     },
 
-    /**
-     * NEW: Handles the Sidebar Toggle Logic
-     */
     initToggle: function() {
         const toggleBtn = document.getElementById('sidebar-toggle');
         const sidebar = document.getElementById('main-sidebar');
@@ -52,11 +40,8 @@ export const Sidebar = {
         if (!toggleBtn || !sidebar) return;
 
         toggleBtn.addEventListener('click', () => {
-            // Toggle Width Classes (Tailwind)
             sidebar.classList.toggle('w-64');
             sidebar.classList.toggle('w-20');
-            
-            // Toggle Custom Class for hiding text
             sidebar.classList.toggle('collapsed-mode');
         });
     }

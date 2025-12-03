@@ -5,6 +5,7 @@ import { AuthService } from '../../../Settings/auth.js';
 
 let allStaff = [];
 let tankTypes = [];
+let allCars = []; // Store available cars
 let currentView = 'driver'; 
 
 document.addEventListener('DOMContentLoaded', initApp);
@@ -27,10 +28,12 @@ function setupRealtimeSubscription() {
 function refreshData() {
     Promise.all([
         DriversData.fetchDrivers(),
-        DriversData.fetchTankTypes()
-    ]).then(([drivers, tanks]) => {
+        DriversData.fetchTankTypes(),
+        DriversData.fetchCars() // Fetch cars here
+    ]).then(([drivers, tanks, cars]) => {
         allStaff = drivers;
         tankTypes = tanks;
+        allCars = cars;
         renderCurrentView();
     });
 }
@@ -59,7 +62,8 @@ function setupEventListeners() {
     document.getElementById('view-employees').addEventListener('click', () => { currentView = 'employee'; renderCurrentView(); });
 
     document.getElementById('btn-add-driver').addEventListener('click', () => {
-        DriversUI.openModal(false, currentView, tankTypes, allStaff);
+        // Pass allCars to modal
+        DriversUI.openModal(false, currentView, tankTypes, allStaff, allCars);
     });
 
     document.getElementById('btn-close-modal').addEventListener('click', () => DriversUI.closeModal());
@@ -89,7 +93,6 @@ async function handleFormSubmit(e) {
     const id = ui.id.value;
     const role = ui.role.value;
 
-    // VALIDATION: Strict 11 digits
     if (!isValidPhone(ui.phone1.value)) {
         DriversUI.showError('خطأ', 'رقم الهاتف الأساسي يجب أن يكون 11 رقم');
         return;
@@ -158,6 +161,7 @@ async function handleTableActions(e) {
     if (!btn) return;
     const id = btn.dataset.id;
 
+    // 1. Delete
     if (btn.classList.contains('btn-delete')) {
         Swal.fire({
             title: 'حذف السجل؟',
@@ -181,22 +185,35 @@ async function handleTableActions(e) {
         });
     }
 
+    // 2. Edit
     if (btn.classList.contains('btn-edit')) {
         const item = allStaff.find(d => d.id == id);
         if (item) {
-            DriversUI.openModal(true, item.role, tankTypes, allStaff);
+            // Pass allCars to modal
+            DriversUI.openModal(true, item.role, tankTypes, allStaff, allCars);
             DriversUI.fillForm(item);
         }
     }
 
-    // Handle Phone List Popup
+    // 3. View Customers
+    if (btn.classList.contains('btn-customers')) {
+        Swal.fire({
+            icon: 'info',
+            title: 'تنبيه',
+            text: 'سيتم إتاحة عرض الزبائن وتحديد مواقعهم في التحديث القادم',
+            confirmButtonText: 'حسناً',
+            confirmButtonColor: '#3b82f6',
+            customClass: { popup: 'rounded-2xl' }
+        });
+    }
+
+    // 4. View Phones
     if (btn.classList.contains('btn-phones')) {
         const item = allStaff.find(d => d.id == id);
         if (!item) return;
 
         let phoneHtml = `<div class="space-y-3 text-right dir-rtl">`;
         
-        // Helper to generate phone row
         const addPhoneRow = (num, label, color) => `
             <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <div class="flex flex-col">
@@ -223,7 +240,7 @@ async function handleTableActions(e) {
         });
     }
 
-    // Handle Commission Popup
+    // 5. View Commission
     if (btn.classList.contains('btn-commission')) {
         const item = allStaff.find(d => d.id == id);
         if (!item) return;

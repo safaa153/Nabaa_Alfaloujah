@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محطة نبع الخيرات - إدارة السيارات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="../../Css/styles.css">
+
+    <style>
+        #main-sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #main-sidebar.collapsed-mode .sidebar-text,
+        #main-sidebar.collapsed-mode h1, #main-sidebar.collapsed-mode p,
+        #main-sidebar.collapsed-mode span { display: none; opacity: 0; }
+        #main-sidebar.collapsed-mode .nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
+        #main-sidebar.collapsed-mode .logo-container { width: 3rem; height: 3rem; margin-bottom: 1rem; }
+        #main-sidebar.collapsed-mode .logo-icon { font-size: 1.25rem; }
+    </style>
+</head>
+<body class="text-gray-800 bg-gray-50 overflow-hidden font-sans">
+
+    <div class="flex h-screen">
+        <!-- SIDEBAR -->
+        <aside id="main-sidebar" class="sidebar-glass w-64 flex-shrink-0 flex flex-col p-4 h-full overflow-y-auto z-20 border-l border-gray-100 bg-white/80 backdrop-blur-md">
+            <div class="mb-8 text-center whitespace-nowrap">
+                 <div class="logo-container w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3 transition-all duration-300">
+                    <i class="ph ph-drop text-3xl text-white logo-icon"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الخيرات</h1>
+                <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
+            </div>
+            <nav id="sidebar-nav"></nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-y-auto relative">
+            <header class="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+                <div class="px-8 py-5 border-b border-gray-50 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <button id="sidebar-toggle" class="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors">
+                            <i class="ph ph-list text-2xl"></i>
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="ph-duotone ph-car text-cyan-600"></i>
+                            إدارة السيارات
+                        </h2>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-3 pl-6 border-l border-gray-100">
+                            <div class="text-right hidden md:block">
+                                <h3 class="text-sm font-bold text-gray-800">المسؤول</h3>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase">ACCOUNTANT</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20">م</div>
+                        </div>
+                        <button id="btn-logout" class="w-11 h-11 bg-red-500 rounded-2xl flex items-center justify-center text-white hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all">
+                            <i class="ph-bold ph-sign-out text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
+                    <div class="flex items-center gap-3 flex-1"></div> <!-- Spacer -->
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <div class="relative flex-1 md:flex-none">
+                             <i class="ph ph-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                             <input type="text" id="search-car" placeholder="بحث باسم أو رقم السيارة..." class="pl-4 pr-10 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-cyan-500 text-sm w-full md:w-64 transition-colors">
+                        </div>
+                        <button id="btn-export" class="bg-white text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 border border-gray-200 py-2 px-3 rounded-lg flex items-center gap-2 font-bold transition-colors shadow-sm">
+                            <i class="ph ph-microsoft-excel-logo text-lg"></i>
+                        </button>
+                        <button id="btn-add-car" class="btn-primary py-2 px-5 rounded-lg flex items-center gap-2 font-bold shadow-lg shadow-cyan-500/30 text-sm">
+                            <i class="ph ph-plus text-lg"></i>
+                            <span>إضافة سيارة</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right modern-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>اسم السيارة</th>
+                                    <th class="text-center">رقم السيارة</th>
+                                    <th class="text-center">السائق</th>
+                                    <th class="text-center">سعة الخزان</th>
+                                    <th class="text-center">اللون</th>
+                                    <th class="text-center">ملاحظات</th> <!-- Added Notes Header -->
+                                    <th class="text-center">المستندات</th>
+                                    <th class="text-center">تعديل</th>
+                                    <th class="text-center">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cars-table-body" class="text-sm font-medium text-gray-700"></tbody>
+                        </table>
+                    </div>
+                    <div id="loading-state" class="hidden py-12 flex flex-col items-center justify-center text-gray-400">
+                        <i class="ph ph-spinner animate-spin text-3xl mb-2 text-cyan-500"></i>
+                        <p>جاري تحميل البيانات...</p>
+                    </div>
+                    <div id="empty-state" class="hidden py-12 flex flex-col items-center justify-center text-gray-400">
+                        <i class="ph ph-car text-4xl mb-2 text-gray-300"></i>
+                        <p>لا توجد سيارات مضافة</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CAR MODAL -->
+    <div id="car-modal" class="fixed inset-0 z-50 hidden bg-black/30 backdrop-blur-sm flex items-center justify-center p-4">
+         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]" id="car-modal-content">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                <h3 class="text-lg font-bold text-gray-800" id="modal-title">إضافة سيارة</h3>
+                <button id="btn-close-modal" class="text-gray-400 hover:text-red-500"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            
+            <form id="car-form" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="car-id">
+                <input type="hidden" id="existing-photo-url">
+                <input type="hidden" id="existing-id-photo-url">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-gray-700">اسم السيارة <span class="text-red-500">*</span></label>
+                        <input type="text" id="car-name" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-cyan-500 outline-none" required>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-gray-700">رقم السيارة (داخلي)</label>
+                        <input type="text" id="car-number" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-cyan-500 outline-none">
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-gray-700">رقم اللوحة</label>
+                        <input type="text" id="car-plate" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-cyan-500 outline-none">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-gray-700">اللون</label>
+                        <input type="text" id="car-color" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-cyan-500 outline-none">
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-gray-700">سعة الخزان (لتر)</label>
+                        <input type="number" id="car-capacity" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-cyan-500 outline-none">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-sm font-bold text-gray-700">السائق المسؤول</label>
+                        <select id="car-driver" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-cyan-500 outline-none cursor-pointer"></select>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-gray-700">ملاحظات</label>
+                    <textarea id="car-note" rows="2" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-cyan-500 outline-none"></textarea>
+                </div>
+
+                <hr class="border-gray-100">
+                <h4 class="font-bold text-gray-800 text-sm">المرفقات</h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">صورة السيارة</label>
+                        <input type="file" id="car-photo" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100">
+                        <div id="preview-car-photo" class="hidden mt-2">
+                            <a href="#" target="_blank" class="text-xs text-blue-500 underline">عرض الصورة الحالية</a>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">صورة السنوية (ID)</label>
+                        <input type="file" id="car-id-photo" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100">
+                        <div id="preview-id-photo" class="hidden mt-2">
+                            <a href="#" target="_blank" class="text-xs text-blue-500 underline">عرض الصورة الحالية</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex gap-3 mt-auto">
+                    <button type="submit" id="btn-submit-car" class="btn-primary w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2">
+                        <span>حفظ</span>
+                    </button>
+                    <button type="button" id="btn-cancel-modal" class="w-1/3 py-3 rounded-lg font-bold text-gray-600 bg-gray-100 hover:bg-gray-200">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { Sidebar } from '../../../Settings/sidebar.js';
+        document.addEventListener('DOMContentLoaded', () => { 
+            Sidebar.render('cars'); 
+            Sidebar.initToggle(); 
+        });
+    </script>
+    <script type="module" src="../js/cars/main.js"></script>
+</body>
+</html>

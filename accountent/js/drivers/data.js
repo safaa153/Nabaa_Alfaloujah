@@ -3,6 +3,7 @@ import { AuthService } from '../../../Settings/auth.js';
 
 const supabase = AuthService.db;
 const DRIVERS_TABLE = 'drivers'; 
+const CARS_TABLE = 'cars'; 
 const TANKS_TABLE = 'tank_types';
 const AREAS_TABLE = 'areas';
 
@@ -42,7 +43,23 @@ export const DriversData = {
         }
     },
 
-    // NEW: Get Area Names for a specific driver
+    // UPDATED: Fetch name, color, and note
+    fetchCars: async function() {
+        if (!supabase) return [];
+        try {
+            const { data, error } = await supabase
+                .from(CARS_TABLE)
+                .select('id, name, color, note') // Added color and note here
+                .order('name', { ascending: true });
+            
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error("Fetch Cars Error:", error);
+            return [];
+        }
+    },
+
     getAreasByDriverId: async function(driverId) {
         const { data, error } = await supabase
             .from(AREAS_TABLE)

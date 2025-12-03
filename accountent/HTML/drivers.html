@@ -194,7 +194,10 @@
 
                 <div id="driver-specific-fields" class="hidden space-y-1">
                     <label class="text-sm font-bold text-gray-700">نوع/اسم السيارة</label>
-                    <input type="text" id="driver-car" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none">
+                    <!-- CHANGED: From INPUT to SELECT -->
+                    <select id="driver-car" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none">
+                        <option value="">اختر السيارة...</option>
+                    </select>
                 </div>
 
                 <div id="assistant-specific-fields" class="hidden space-y-1">

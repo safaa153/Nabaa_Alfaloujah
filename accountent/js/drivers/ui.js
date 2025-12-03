@@ -18,7 +18,7 @@ export const DriversUI = {
         phone1: document.getElementById('driver-phone1'),
         phone2: document.getElementById('driver-phone2'),
         phone3: document.getElementById('driver-phone3'),
-        carName: document.getElementById('driver-car'),
+        carName: document.getElementById('driver-car'), 
         linkedDriver: document.getElementById('assistant-linked-driver'),
         jobTitle: document.getElementById('employee-job-title'),
         salary: document.getElementById('employee-salary'),
@@ -47,6 +47,7 @@ export const DriversUI = {
         list.forEach((item, index) => {
             const isActive = item.is_active !== false;
             
+            // 1. Extra Info Columns
             let extraColumns = '';
             if (currentView === 'driver') {
                 extraColumns = `
@@ -72,6 +73,7 @@ export const DriversUI = {
                 `;
             }
 
+            // 2. Commission/Desc Cell
             let actionCell = '';
             if (currentView === 'employee') {
                  actionCell = `<td class="text-center text-xs text-gray-400 truncate max-w-[150px]">${item.job_description || '-'}</td>`;
@@ -83,6 +85,18 @@ export const DriversUI = {
                         </button>
                     </td>
                  `;
+            }
+
+            // 3. Customers Button Cell
+            let customersCell = '';
+            if (currentView === 'driver') {
+                customersCell = `
+                    <td class="text-center p-4">
+                        <button class="btn-customers w-9 h-9 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors shadow-sm flex items-center justify-center mx-auto" data-id="${item.id}" title="عرض الزبائن">
+                            <i class="ph-bold ph-users text-lg"></i>
+                        </button>
+                    </td>
+                `;
             }
 
             const row = document.createElement('tr');
@@ -100,7 +114,6 @@ export const DriversUI = {
                     </span>
                 </td>
                 
-                <!-- PHONES BUTTON -->
                 <td class="text-center p-4">
                      <button class="btn-phones w-9 h-9 rounded-xl bg-purple-50 text-purple-600 hover:bg-purple-600 hover:text-white transition-colors flex items-center justify-center mx-auto shadow-sm" data-id="${item.id}" title="أرقام الهاتف">
                         <i class="ph-bold ph-list-numbers text-lg"></i>
@@ -108,6 +121,7 @@ export const DriversUI = {
                 </td>
 
                 ${actionCell}
+                ${customersCell}
 
                 <td class="text-center p-4">
                     <button class="btn-edit bg-emerald-500 text-white w-9 h-9 rounded-xl hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20" data-id="${item.id}">
@@ -134,6 +148,7 @@ export const DriversUI = {
                 <th class="text-center">الحالة</th>
                 <th class="text-center">أرقام الهاتف</th>
                 <th class="text-center">العمولة</th>
+                <th class="text-center">الزبائن</th>
                 <th class="text-center">تعديل</th> <th class="text-center">حذف</th>
             `;
         } else if (view === 'assistant') {
@@ -159,8 +174,7 @@ export const DriversUI = {
         this.tableHeader.innerHTML = `<tr>${cols}</tr>`;
     },
 
-    // ... rest of openModal, fillForm, etc. (Same as before)
-    openModal: function(isEdit = false, role = 'driver', tankTypes = [], allStaff = []) {
+    openModal: function(isEdit = false, role = 'driver', tankTypes = [], allStaff = [], cars = []) {
         this.modal.classList.remove('hidden');
         setTimeout(() => {
             this.modalContent.classList.remove('scale-95', 'opacity-0');
@@ -177,14 +191,29 @@ export const DriversUI = {
         this.inputs.employeeFields.classList.add('hidden');
         this.inputs.commissionSection.classList.add('hidden');
 
+        // ALWAYS Reset Commission Container content before rendering
+        this.inputs.commissionContainer.innerHTML = '';
+
         if (role === 'driver') {
             this.inputs.driverFields.classList.remove('hidden');
             this.inputs.commissionSection.classList.remove('hidden');
             this.renderCommissionInputs(tankTypes);
+            
+            // Populate Car Dropdown
+            this.inputs.carName.innerHTML = '<option value="">اختر السيارة...</option>' + 
+                cars.map(c => {
+                    let label = c.name;
+                    if (c.color) label += ` - ${c.color}`;
+                    if (c.note) label += ` (${c.note})`;
+                    return `<option value="${c.name}">${label}</option>`;
+                }).join('');
+
         } else if (role === 'assistant') {
             this.inputs.assistantFields.classList.remove('hidden');
             this.inputs.commissionSection.classList.remove('hidden');
-            this.renderCommissionInputs(tankTypes);
+            // FIX: Ensure tank types are rendered for assistants too
+            this.renderCommissionInputs(tankTypes); 
+            
             const drivers = allStaff.filter(d => d.role === 'driver');
             this.inputs.linkedDriver.innerHTML = '<option value="">اختر السائق...</option>' + 
                 drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
@@ -195,7 +224,13 @@ export const DriversUI = {
 
     renderCommissionInputs: function(tanks) {
         const container = this.inputs.commissionContainer;
-        if(container.innerHTML !== '') return; 
+        // REMOVED CHECK: if(container.innerHTML !== '') return; 
+        // We now always regenerate to ensure all active tanks are shown.
+
+        if (!tanks || tanks.length === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد أنواع خزانات نشطة</p>';
+            return;
+        }
 
         container.innerHTML = tanks.map(tank => `
             <div class="commission-group bg-gray-50 p-3 rounded-lg border border-gray-100" data-tank-id="${tank.id}">
@@ -241,6 +276,15 @@ export const DriversUI = {
         if (data.role === 'driver' || data.role === 'assistant') {
             const rules = data.commission_rules || {};
             const groups = document.querySelectorAll('.commission-group');
+            
+            // Clear all inputs first to avoid stale data
+            groups.forEach(group => {
+                group.querySelector('.comm-threshold').value = '';
+                group.querySelector('.comm-base').value = '';
+                group.querySelector('.comm-bonus').value = '';
+            });
+
+            // Fill with saved data
             groups.forEach(group => {
                 const tankId = group.dataset.tankId;
                 const rule = rules[tankId];
@@ -260,9 +304,10 @@ export const DriversUI = {
             this.modal.classList.add('hidden');
             this.form.reset();
             this.inputs.id.value = '';
+            this.inputs.commissionContainer.innerHTML = ''; // Clear commission fields
         }, 300);
     },
-    
+
     showError: function(t, m) { Swal.fire({icon:'error', title:t, text:m, confirmButtonText:'حسناً', confirmButtonColor: '#ef476f', customClass: { popup: 'rounded-2xl' }}); },
     showSuccess: function(t, m) { Swal.fire({icon:'success', title:t, text:m, showConfirmButton:false, timer:1500, customClass: { popup: 'rounded-2xl' }}); }
 };
