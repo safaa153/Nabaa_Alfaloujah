@@ -1,0 +1,177 @@
+/* --- FONTS --- */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap');
+
+:root {
+    /* New Aquatic Palette */
+    --primary-color: #00b4d8; /* Deep Sky Blue - Core Brand Color */
+    --secondary-color: #0077b6; /* Deeper Blue for gradient end */
+    --accent-color: #48cae4; /* Light Aqua - Freshness */
+    --success-color: #00b894; /* Fresh Green for Active State */
+    --danger-color: #ef476f; /* Coral Red for Danger */
+    
+    /* Glass Effect (Remains Clean) */
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+body {
+    font-family: 'Cairo', sans-serif;
+    /* Clean, soft aquatic background */
+    background-color: #e5f7ff; 
+    background-image: 
+        radial-gradient(at 0% 100%, hsla(180, 80%, 90%, 0.8) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(210, 100%, 80%, 0.5) 0, transparent 50%);
+    color: #1f2937;
+    overflow-x: hidden;
+}
+
+/* --- CUSTOM SCROLLBAR (No change) --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+::-webkit-scrollbar-thumb {
+    background: #c7c7c7; 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0; 
+}
+
+/* --- GLASS CARD COMPONENT (No major change, relying on colors) --- */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 1.5rem; /* Rounded-2xl */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* --- SIDEBAR --- */
+.sidebar-glass {
+    /* Slightly less transparent, cleaner white */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255,255,255,0.3);
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    color: #64748b;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 0.5rem;
+}
+
+.nav-link:hover {
+    background: white;
+    color: var(--primary-color); /* Uses new primary color */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transform: translateX(-5px); /* Move slightly left on hover (RTL) */
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); /* Uses new gradient */
+    color: white;
+    box-shadow: 0 8px 20px rgba(0, 180, 216, 0.3); /* Updated shadow color */
+}
+
+/* --- BUTTONS --- */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); /* Uses new gradient */
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 180, 216, 0.4); /* Updated shadow color */
+}
+.btn-primary:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--danger-color), #bc395f); /* Uses new danger color */
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 71, 111, 0.3);
+}
+
+/* --- TABLE STYLES (No change) --- */
+.modern-table thead th {
+    background: transparent;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 1.25rem 1rem;
+}
+
+.modern-table tbody tr {
+    background: white;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8fafc;
+    transform: scale(1.005);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    z-index: 10;
+    position: relative;
+}
+
+.modern-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+}
+.badge-active {
+    background: rgba(0, 184, 148, 0.1); /* Uses success-color */
+    color: #00b894;
+    border: 1px solid rgba(0, 184, 148, 0.2);
+}
+.badge-inactive {
+    background: rgba(239, 71, 111, 0.1); /* Uses danger-color */
+    color: #ef476f;
+    border: 1px solid rgba(239, 71, 111, 0.2);
+}
+
+/* --- ANIMATIONS (No change) --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.table-row-anim {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Utils */
+.phone-number { direction: ltr; font-family: 'Courier New', monospace; font-weight: 700; }

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - نبع الفلوجة</title>
+    
+    <!-- TAILWIND & FONTS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- THEME CONFIG -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 600: '#3b82f6', 700: '#2563eb' },
+                        secondary: { 600: '#4f46e5' } // Indigo/Purple tint from reference
+                    },
+                    fontFamily: { sans: ['Tajawal', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Tajawal', sans-serif; overflow: hidden; }
+        
+        /* LEFT SIDE (Visual) */
+        .visual-side {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); /* Purple/Blue Gradient */
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tank-bg {
+            background-image: url('../../Photos/Tank.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15; /* Subtle texture */
+            mix-blend-mode: overlay;
+            position: absolute;
+            inset: 0;
+        }
+
+        /* Glass Badges on Left */
+        .feature-badge {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: white;
+            transition: transform 0.3s;
+        }
+        .feature-badge:hover { transform: translateY(-3px); }
+
+        /* RIGHT SIDE (Form) */
+        .form-side {
+            background-color: #f8fafc; /* Very light gray background */
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .login-card {
+            background: white;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f1f5f9;
+        }
+
+        /* Custom Input */
+        .custom-input {
+            transition: all 0.3s ease;
+        }
+        .custom-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex">
+
+    <!-- RIGHT SIDE (Login Form) - In RTL this is on the Right -->
+    <div class="w-full lg:w-1/2 form-side flex flex-col justify-center items-center p-6 relative">
+        
+        <!-- Login Card -->
+        <div class="login-card w-full max-w-md p-10 rounded-[2rem] relative z-10">
+            
+            <!-- Logo Section -->
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center shadow-md border border-gray-50 mb-4 p-4">
+                    <img src="../../Photos/Logo.png" alt="Logo" class="w-full h-full object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
+                </div>
+                <h1 class="text-2xl font-extrabold text-gray-900">نبع الفلوجة</h1>
+                <div class="flex items-center justify-center gap-1.5 mt-1.5 text-green-600 bg-green-50 px-3 py-1 rounded-full w-fit mx-auto">
+                    <i class="ph-fill ph-shield-check"></i>
+                    <span class="text-[10px] font-bold">نظام آمن ومتوافق (GDPR)</span>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="login-form" class="space-y-5">
+                
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-gray-500">البريد الإلكتروني (الحساب)</label>
+                    <div class="relative">
+                        <input type="email" id="email" 
+                               class="custom-input w-full p-3.5 pl-10 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white text-sm outline-none dir-ltr text-left" 
+                               placeholder="user@nabaa.com" required>
+                        <i class="ph-bold ph-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-gray-500">كلمة المرور</label>
+                    <div class="relative">
+                        <input type="password" id="password" 
+                               class="custom-input w-full p-3.5 pl-10 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white text-sm outline-none dir-ltr text-left" 
+                               placeholder="••••••" required>
+                        <i class="ph-bold ph-lock-key absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-login" class="w-full py-3.5 bg-secondary-600 hover:bg-secondary-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-4">
+                    <span>تسجيل الدخول الآمن</span>
+                    <i class="ph-bold ph-arrow-left"></i>
+                </button>
+
+            </form>
+
+            <div class="mt-8 text-center text-[10px] text-gray-400 space-y-1 leading-relaxed">
+                <p>&copy; 2025 نظام إدارة الخزانات</p>
+                <p>تصميم شركة <span class="font-bold text-indigo-600">Neurix</span> للأنظمة الذكية والذكاء الاصطناعي</p>
+                <p>تنفيذ المهندس <span class="font-bold text-gray-600">صفاء الزبيدي</span> | 07739333537</p>
+            </div>
+        </div>
+
+        <!-- Decorative Blurs behind card -->
+        <div class="absolute top-1/4 right-10 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div class="absolute bottom-1/4 left-10 w-64 h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+    </div>
+
+    <!-- LEFT SIDE (Visual / Tank Image) - In RTL this is on the Left -->
+    <div class="hidden lg:flex w-1/2 visual-side flex-col justify-center items-center text-white p-16 text-center">
+        
+        <div class="tank-bg"></div> <!-- Tank Photo Overlay -->
+        
+        <div class="relative z-10 max-w-lg">
+            <!-- Large Icon Badge -->
+            <div class="w-20 h-20 bg-white/20 backdrop-blur-md rounded-[2rem] mx-auto flex items-center justify-center border border-white/20 mb-8 shadow-2xl animate-float">
+                <i class="ph-fill ph-shield-check text-4xl text-green-300"></i>
+            </div>
+
+            <h2 class="text-5xl font-extrabold mb-6 leading-tight drop-shadow-lg">الجودة والسرعة <br> في مكان واحد</h2>
+            
+            <div class="bg-white/10 backdrop-blur-md p-6 rounded-2xl border-r-4 border-green-400 text-right mb-10 shadow-lg">
+                <h4 class="font-bold text-green-300 mb-2 flex items-center gap-2">
+                    <i class="ph-fill ph-lock-key"></i> حماية البيانات
+                </h4>
+                <p class="text-sm opacity-90 leading-relaxed text-blue-50">
+                    تم تحديث النظام ليعمل وفق أعلى معايير الحماية الأوروبية (GDPR). بياناتك مشفرة ومحمية بالكامل ضد الهجمات الإلكترونية لضمان سرية وسلامة المعلومات.
+                </p>
+            </div>
+
+            <!-- Feature Grid -->
+            <div class="flex justify-center gap-4 text-xs font-bold">
+                <div class="feature-badge px-4 py-2.5 flex items-center gap-2">
+                    <i class="ph-bold ph-lightning text-yellow-300 text-lg"></i>
+                    <span>متابعة فورية</span>
+                </div>
+                <div class="feature-badge px-4 py-2.5 flex items-center gap-2">
+                    <i class="ph-bold ph-calculator text-green-300 text-lg"></i>
+                    <span>دقة في الحسابات</span>
+                </div>
+                <div class="feature-badge px-4 py-2.5 flex items-center gap-2">
+                    <i class="ph-bold ph-file-lock text-cyan-300 text-lg"></i>
+                    <span> نسخ أحتياطي يومي</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script type="module" src="../js/login/login.js"></script>
+    
+    <!-- Animation Keyframes -->
+    <style>
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        
+        @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(30px, -50px) scale(1.1); } 66% { transform: translate(-20px, 20px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+    </style>
+</body>
+</html>

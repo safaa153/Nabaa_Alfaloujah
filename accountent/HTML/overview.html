@@ -1,0 +1,144 @@
+<!-- accountent/HTML/overview.html -->
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محطة نبع الخيرات - نظرة عامة</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="../../Css/styles.css">
+
+    <style>
+        body, html { height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .main-layout { display: flex; height: 100vh; overflow: hidden; }
+        .content-area { flex: 1; overflow-y: auto; background: #f8fafc; }
+        .animate-enter { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- NEW SIDEBAR STYLES --- */
+        /* Smooth width transition */
+        #main-sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* When collapsed: Hide Text */
+        #main-sidebar.collapsed-mode .sidebar-text,
+        #main-sidebar.collapsed-mode h1, 
+        #main-sidebar.collapsed-mode p,
+        #main-sidebar.collapsed-mode span { 
+            display: none; 
+            opacity: 0;
+        }
+
+        /* When collapsed: Center Icons */
+        #main-sidebar.collapsed-mode .nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        
+        /* Adjust logo size when collapsed */
+        #main-sidebar.collapsed-mode .logo-container {
+            width: 3rem; /* w-12 */
+            height: 3rem; /* h-12 */
+            margin-bottom: 1rem;
+        }
+        #main-sidebar.collapsed-mode .logo-icon {
+            font-size: 1.25rem; /* smaller icon */
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="main-layout">
+        
+        <!-- SIDEBAR -->
+        <aside id="main-sidebar" class="sidebar-glass w-64 flex-shrink-0 flex flex-col p-4 h-full overflow-y-auto z-20 border-l border-gray-100 bg-white/80 backdrop-blur-md">
+            <!-- Removed overflow-hidden to fix shadow clipping -->
+            <div class="mb-8 text-center whitespace-nowrap">
+                 <!-- Logo Container -->
+                 <div class="logo-container w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3 transition-all duration-300">
+                    <i class="ph ph-drop text-3xl text-white logo-icon"></i>
+                </div>
+                <!-- Title Text (Updated Name) -->
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الخيرات</h1>
+                <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
+            </div>
+            <nav id="sidebar-nav"></nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="content-area relative">
+            
+            <header class="px-8 py-5 bg-white/80 backdrop-blur-md border-b border-gray-100 flex justify-between items-center sticky top-0 z-30">
+                
+                <!-- Left: Title & Toggle Button -->
+                <div class="flex items-center gap-4">
+                    <!-- Toggle Button -->
+                    <button id="sidebar-toggle" class="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors">
+                        <i class="ph ph-list text-2xl"></i>
+                    </button>
+
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">نظرة عامة</h2>
+                        <p class="text-gray-400 text-sm mt-1">ملخص نشاط المحطة اليومي</p>
+                    </div>
+                </div>
+
+                <!-- Right: Profile & Actions -->
+                <div class="flex items-center gap-6">
+                    
+                    <!-- Profile Block -->
+                    <div class="flex items-center gap-3 pl-6 border-l border-gray-100">
+                        <div class="text-right">
+                            <h3 class="text-sm font-bold text-gray-800 leading-tight">المسؤول</h3>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20">
+                            م
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button class="btn-logout w-11 h-11 bg-red-500 rounded-2xl flex items-center justify-center text-white hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/30 transition-all shadow-md transform hover:-translate-y-0.5" title="تسجيل الخروج">
+                            <i class="ph-bold ph-sign-out text-xl"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </header>
+
+            <div class="p-8 max-w-7xl mx-auto space-y-8">
+                <!-- Quick Stats Grid -->
+                <div id="quick-stats-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                    <div class="col-span-full py-12 flex justify-center">
+                        <i class="ph ph-spinner animate-spin text-3xl text-blue-300"></i>
+                    </div>
+                </div>
+
+                <!-- Main Grid -->
+                <div class="grid grid-cols-1 gap-8">
+                    <!-- Tank Distribution -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <i class="ph-fill ph-chart-pie-slice text-purple-500"></i>
+                            توزيع المشتركين على الخزانات
+                        </h3>
+                        <div id="tanks-container" class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { Sidebar } from '../../../Settings/sidebar.js'; 
+        document.addEventListener('DOMContentLoaded', () => {
+            Sidebar.render('overview');
+            Sidebar.initToggle();
+        });
+    </script>
+    <script type="module" src="../js/overview/main.js"></script>
+</body>
+</html>
