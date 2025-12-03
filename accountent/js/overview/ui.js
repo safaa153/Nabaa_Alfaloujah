@@ -1,6 +1,40 @@
 // accountent/js/overview/ui.js
 export const OverviewUI = {
     
+    // Header Selectors
+    get headerName() { return document.getElementById('header-user-name'); },
+    get headerRole() { return document.getElementById('header-user-role'); },
+    get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
+    get headerAvatarImg() { return document.getElementById('header-user-img'); },
+
+    // UPDATED: Update Header Profile (Name, Role, Photo)
+    updateHeaderProfile: function(profile) {
+        if (!profile) return;
+
+        // Update Name & Role
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+
+        // Update Avatar
+        const container = this.headerAvatarContainer;
+        const img = this.headerAvatarImg;
+        if (!container || !img) return;
+
+        if (profile.photo_url) {
+            img.src = profile.photo_url;
+            img.classList.remove('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) letterSpan.style.display = 'none';
+        } else {
+            img.classList.add('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) {
+                letterSpan.style.display = 'block';
+                if (profile.name) letterSpan.innerText = profile.name.charAt(0);
+            }
+        }
+    },
+
     renderStats: (containerId, statsData) => {
         const container = document.getElementById(containerId);
         if (!container) return;

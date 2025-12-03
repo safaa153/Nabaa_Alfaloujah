@@ -11,6 +11,16 @@ document.addEventListener('DOMContentLoaded', initApp);
 function initApp() {
     setupEventListeners();
     refreshData();
+    // NEW: Load Header Profile
+    loadHeaderProfile();
+}
+
+// UPDATED: Function to load and update profile (Name, Role, Photo)
+async function loadHeaderProfile() {
+    const profile = await AreasData.fetchUserProfile();
+    if (profile) {
+        AreasUI.updateHeaderProfile(profile);
+    }
 }
 
 function refreshData() {

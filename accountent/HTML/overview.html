@@ -62,7 +62,7 @@
                     <i class="ph ph-drop text-3xl text-white logo-icon"></i>
                 </div>
                 <!-- Title Text (Updated Name) -->
-                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الخيرات</h1>
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الفلوجة</h1>
                 <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
             </div>
             <nav id="sidebar-nav"></nav>
@@ -92,12 +92,20 @@
                     <!-- Profile Block -->
                     <div class="flex items-center gap-3 pl-6 border-l border-gray-100">
                         <div class="text-right">
-                            <h3 class="text-sm font-bold text-gray-800 leading-tight">المسؤول</h3>
-                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
+                            <!-- Dynamic Name -->
+                            <h3 id="header-user-name" class="text-sm font-bold text-gray-800 leading-tight">المسؤول</h3>
+                            <!-- Dynamic Role -->
+                            <p id="header-user-role" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
                         </div>
-                        <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20">
-                            م
+                        
+                        <!-- Profile Avatar Container -->
+                        <div class="relative group cursor-pointer">
+                            <div id="header-user-avatar" class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20 overflow-hidden">
+                                <span>م</span> <!-- Default Letter -->
+                                <img id="header-user-img" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                            </div>
                         </div>
+
                     </div>
 
                     <div class="flex items-center gap-3">

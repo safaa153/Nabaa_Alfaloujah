@@ -6,6 +6,7 @@ const DRIVERS_TABLE = 'drivers';
 const CARS_TABLE = 'cars'; 
 const TANKS_TABLE = 'tank_types';
 const AREAS_TABLE = 'areas';
+const BUCKET_PROFILES = 'user-profiles';
 
 export const DriversData = { 
     
@@ -43,13 +44,62 @@ export const DriversData = {
         }
     },
 
-    // UPDATED: Fetch name, color, and note
+    // UPDATED: Fetch Name, Job Title and Photo
+    fetchUserProfile: async function() {
+        if (!supabase) return null;
+        try {
+            const { data, error } = await supabase
+                .from(DRIVERS_TABLE)
+                .select('name, job_title, photo_url')
+                .eq('job_title', 'محاسب')
+                .limit(1)
+                .maybeSingle();
+            
+            if (error) return null;
+            return data;
+        } catch (error) {
+            console.error("Fetch Profile Error:", error);
+            return null;
+        }
+    },
+
+    uploadProfileImage: async function(file) {
+        if (!file) return null;
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `profile-${Date.now()}.${fileExt}`;
+
+            const { data, error } = await supabase.storage
+                .from(BUCKET_PROFILES)
+                .upload(fileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (error) {
+                console.error("Profile Upload Error:", error);
+                if (error.message.includes('row-level security')) {
+                    throw new Error("يرجى تفعيل Policies في الـ Storage (user-profiles)");
+                }
+                throw error;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+                .from(BUCKET_PROFILES)
+                .getPublicUrl(fileName);
+
+            return publicUrl;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     fetchCars: async function() {
         if (!supabase) return [];
         try {
             const { data, error } = await supabase
                 .from(CARS_TABLE)
-                .select('id, name, color, note') // Added color and note here
+                .select('id, name, color, note')
                 .order('name', { ascending: true });
             
             if (error) throw error;

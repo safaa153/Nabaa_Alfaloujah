@@ -7,11 +7,43 @@ export const AreasUI = {
     get modal() { return document.getElementById('area-modal'); },
     get modalContent() { return document.getElementById('area-modal-content'); },
     
+    // Header Elements
+    get headerName() { return document.getElementById('header-user-name'); },
+    get headerRole() { return document.getElementById('header-user-role'); },
+    get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
+    get headerAvatarImg() { return document.getElementById('header-user-img'); },
+
     inputs: {
         id: document.getElementById('area-id'),
         name: document.getElementById('area-name'),
         driver: document.getElementById('area-driver'),
         status: document.getElementById('area-status')
+    },
+
+    // UPDATED: Update Header Profile
+    updateHeaderProfile: function(profile) {
+        const container = this.headerAvatarContainer;
+        const img = this.headerAvatarImg;
+        if (!container || !img) return;
+
+        // Update Name and Role
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+
+        // Update Photo
+        if (profile.photo_url) {
+            img.src = profile.photo_url;
+            img.classList.remove('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) letterSpan.style.display = 'none';
+        } else {
+            img.classList.add('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) {
+                letterSpan.style.display = 'block';
+                if (profile.name) letterSpan.innerText = profile.name.charAt(0);
+            }
+        }
     },
 
     renderTable: function(list) {

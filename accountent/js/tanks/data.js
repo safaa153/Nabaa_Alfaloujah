@@ -38,6 +38,27 @@ export const TanksData = {
         }
     },
 
+    // NEW: Fetch User Profile (Accountant)
+    fetchUserProfile: async function() {
+        if (!supabase) return null;
+        try {
+            // Fetch the employee profile where job title is 'Accountant'
+            // This assumes the logged in user is the accountant
+            const { data, error } = await supabase
+                .from('drivers')
+                .select('name, job_title, photo_url')
+                .eq('job_title', 'محاسب')
+                .limit(1)
+                .maybeSingle();
+            
+            if (error) return null;
+            return data;
+        } catch (error) {
+            console.error("Fetch Profile Error:", error);
+            return null;
+        }
+    },
+
     getCustomerCounts: async function() {
         const { data } = await supabase.from('customers').select('tank_id');
         const counts = {};

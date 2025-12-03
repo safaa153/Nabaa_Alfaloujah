@@ -11,6 +11,15 @@ document.addEventListener('DOMContentLoaded', initApp);
 function initApp() {
     setupEventListeners();
     refreshTableData();
+    // NEW: Load Header Profile
+    loadHeaderProfile();
+}
+
+async function loadHeaderProfile() {
+    const profile = await TanksData.fetchUserProfile();
+    if (profile) {
+        TanksUI.updateHeaderProfile(profile);
+    }
 }
 
 function refreshTableData() {
@@ -116,7 +125,6 @@ async function handleFormSubmit(e) {
             TanksUI.showSuccess('تم الإضافة', 'تم إضافة خزان جديد');
         }
         TanksUI.closeModal();
-        // The realtime subscription will auto-refresh, but we can force it for faster UI feedback
         refreshTableData();
     } catch (error) {
         TanksUI.showError('خطأ', error.message);
@@ -168,7 +176,7 @@ function handleGridActions(e) {
             title: 'تنبيه',
             text: 'سيتم إتاحة عرض المشتركين وتحديد مواقعهم في التحديث القادم',
             confirmButtonText: 'حسناً',
-            confirmButtonColor: '#3b82f6', // Blue color
+            confirmButtonColor: '#3b82f6', 
             customClass: { popup: 'rounded-2xl' }
         });
     }

@@ -9,6 +9,12 @@ export const DriversUI = {
     get modalContent() { return document.getElementById('driver-modal-content'); },
     get form() { return document.getElementById('driver-form'); },
     
+    // Header Elements
+    get headerName() { return document.getElementById('header-user-name'); },
+    get headerRole() { return document.getElementById('header-user-role'); },
+    get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
+    get headerAvatarImg() { return document.getElementById('header-user-img'); },
+
     inputs: {
         id: document.getElementById('driver-id'),
         role: document.getElementById('driver-role'),
@@ -27,7 +33,38 @@ export const DriversUI = {
         assistantFields: document.getElementById('assistant-specific-fields'),
         employeeFields: document.getElementById('employee-specific-fields'),
         commissionContainer: document.getElementById('commission-container'),
-        commissionSection: document.getElementById('commission-section')
+        commissionSection: document.getElementById('commission-section'),
+        // Photo Inputs
+        photo: document.getElementById('driver-photo'),
+        photoPreview: document.getElementById('preview-photo'),
+        photoPlaceholder: document.getElementById('preview-placeholder'),
+        existingPhotoUrl: document.getElementById('existing-photo-url')
+    },
+
+    // UPDATED: Update Header Profile (Name, Role, Photo)
+    updateHeaderProfile: function(profile) {
+        const container = this.headerAvatarContainer;
+        const img = this.headerAvatarImg;
+        if (!container || !img) return;
+
+        // Update Name and Role
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+
+        // Update Photo
+        if (profile.photo_url) {
+            img.src = profile.photo_url;
+            img.classList.remove('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) letterSpan.style.display = 'none';
+        } else {
+            img.classList.add('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) {
+                letterSpan.style.display = 'block';
+                if(profile.name) letterSpan.innerText = profile.name.charAt(0);
+            }
+        }
     },
 
     renderTable: function(list, allStaff, currentView) {
@@ -47,7 +84,12 @@ export const DriversUI = {
         list.forEach((item, index) => {
             const isActive = item.is_active !== false;
             
-            // 1. Extra Info Columns
+            // Avatar Rendering
+            const avatarHtml = item.photo_url 
+                ? `<img src="${item.photo_url}" class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm">`
+                : `<div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100 shadow-sm">${item.name.charAt(0)}</div>`;
+
+            // Extra Info Columns
             let extraColumns = '';
             if (currentView === 'driver') {
                 extraColumns = `
@@ -73,7 +115,7 @@ export const DriversUI = {
                 `;
             }
 
-            // 2. Commission/Desc Cell
+            // Commission/Desc Cell
             let actionCell = '';
             if (currentView === 'employee') {
                  actionCell = `<td class="text-center text-xs text-gray-400 truncate max-w-[150px]">${item.job_description || '-'}</td>`;
@@ -87,7 +129,6 @@ export const DriversUI = {
                  `;
             }
 
-            // 3. Customers Button Cell
             let customersCell = '';
             if (currentView === 'driver') {
                 customersCell = `
@@ -103,7 +144,15 @@ export const DriversUI = {
             row.className = 'table-row-anim';
             row.innerHTML = `
                 <td class="font-bold text-gray-400 p-4">#${index + 1}</td>
-                <td class="font-bold text-gray-800 p-4">${item.name}</td>
+                
+                <!-- Name Column with Avatar -->
+                <td class="p-4">
+                    <div class="flex items-center gap-3">
+                        ${avatarHtml}
+                        <span class="font-bold text-gray-800">${item.name}</span>
+                    </div>
+                </td>
+
                 <td class="p-4 dir-ltr text-right text-gray-600 font-mono text-xs">${item.phone}</td>
                 
                 ${extraColumns}
@@ -191,7 +240,7 @@ export const DriversUI = {
         this.inputs.employeeFields.classList.add('hidden');
         this.inputs.commissionSection.classList.add('hidden');
 
-        // ALWAYS Reset Commission Container content before rendering
+        // Reset Commission
         this.inputs.commissionContainer.innerHTML = '';
 
         if (role === 'driver') {
@@ -199,7 +248,6 @@ export const DriversUI = {
             this.inputs.commissionSection.classList.remove('hidden');
             this.renderCommissionInputs(tankTypes);
             
-            // Populate Car Dropdown
             this.inputs.carName.innerHTML = '<option value="">اختر السيارة...</option>' + 
                 cars.map(c => {
                     let label = c.name;
@@ -211,7 +259,6 @@ export const DriversUI = {
         } else if (role === 'assistant') {
             this.inputs.assistantFields.classList.remove('hidden');
             this.inputs.commissionSection.classList.remove('hidden');
-            // FIX: Ensure tank types are rendered for assistants too
             this.renderCommissionInputs(tankTypes); 
             
             const drivers = allStaff.filter(d => d.role === 'driver');
@@ -220,13 +267,21 @@ export const DriversUI = {
         } else if (role === 'employee') {
             this.inputs.employeeFields.classList.remove('hidden');
         }
+
+        // --- Handle File Preview on Change ---
+        this.inputs.photo.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                this.inputs.photoPreview.src = url;
+                this.inputs.photoPreview.classList.remove('hidden');
+                this.inputs.photoPlaceholder.classList.add('hidden');
+            }
+        };
     },
 
     renderCommissionInputs: function(tanks) {
         const container = this.inputs.commissionContainer;
-        // REMOVED CHECK: if(container.innerHTML !== '') return; 
-        // We now always regenerate to ensure all active tanks are shown.
-
         if (!tanks || tanks.length === 0) {
             container.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد أنواع خزانات نشطة</p>';
             return;
@@ -262,6 +317,18 @@ export const DriversUI = {
         this.inputs.phone1.value = data.phone || '';
         this.inputs.phone2.value = data.phone2 || '';
         this.inputs.phone3.value = data.phone3 || '';
+        this.inputs.existingPhotoUrl.value = data.photo_url || '';
+
+        // Fill Photo Preview
+        if(data.photo_url) {
+            this.inputs.photoPreview.src = data.photo_url;
+            this.inputs.photoPreview.classList.remove('hidden');
+            this.inputs.photoPlaceholder.classList.add('hidden');
+        } else {
+            this.inputs.photoPreview.src = '';
+            this.inputs.photoPreview.classList.add('hidden');
+            this.inputs.photoPlaceholder.classList.remove('hidden');
+        }
 
         if (data.role === 'driver') {
             this.inputs.carName.value = data.car_name || '';
@@ -277,14 +344,6 @@ export const DriversUI = {
             const rules = data.commission_rules || {};
             const groups = document.querySelectorAll('.commission-group');
             
-            // Clear all inputs first to avoid stale data
-            groups.forEach(group => {
-                group.querySelector('.comm-threshold').value = '';
-                group.querySelector('.comm-base').value = '';
-                group.querySelector('.comm-bonus').value = '';
-            });
-
-            // Fill with saved data
             groups.forEach(group => {
                 const tankId = group.dataset.tankId;
                 const rule = rules[tankId];
@@ -304,7 +363,12 @@ export const DriversUI = {
             this.modal.classList.add('hidden');
             this.form.reset();
             this.inputs.id.value = '';
-            this.inputs.commissionContainer.innerHTML = ''; // Clear commission fields
+            this.inputs.commissionContainer.innerHTML = ''; 
+            // Reset Photo UI
+            this.inputs.photoPreview.classList.add('hidden');
+            this.inputs.photoPlaceholder.classList.remove('hidden');
+            this.inputs.photoPreview.src = '';
+            this.inputs.existingPhotoUrl.value = '';
         }, 300);
     },
 

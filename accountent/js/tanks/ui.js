@@ -10,12 +10,48 @@ export const TanksUI = {
     get modalTitle() { return document.getElementById('modal-title'); },
     get form() { return document.getElementById('tank-form'); },
     
+    // Header Selectors
+    get headerName() { return document.getElementById('header-user-name'); },
+    get headerRole() { return document.getElementById('header-user-role'); },
+    get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
+    get headerAvatarImg() { return document.getElementById('header-user-img'); },
+    
     inputs: {
         get id() { return document.getElementById('tank-id'); },
         get name() { return document.getElementById('tank-name'); },
         get price() { return document.getElementById('tank-price'); },
         get days() { return document.getElementById('tank-days'); },
         get status() { return document.getElementById('tank-status'); },
+    },
+
+    // --- HEADER UPDATE ---
+    updateHeaderProfile: function(profile) {
+        if (!profile) return;
+
+        // Update Name and Role
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+
+        // Update Avatar
+        const container = this.headerAvatarContainer;
+        const img = this.headerAvatarImg;
+        if (!container || !img) return;
+
+        if (profile.photo_url) {
+            img.src = profile.photo_url;
+            img.classList.remove('hidden');
+            // Hide the default letter span
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) letterSpan.style.display = 'none';
+        } else {
+            img.classList.add('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) {
+                letterSpan.style.display = 'block';
+                // Update letter if name is available
+                if (profile.name) letterSpan.innerText = profile.name.charAt(0);
+            }
+        }
     },
 
     // --- POPUP NOTIFICATIONS ---

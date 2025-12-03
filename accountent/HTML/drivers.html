@@ -17,25 +17,12 @@
         #main-sidebar.collapsed-mode .sidebar-text,
         #main-sidebar.collapsed-mode h1, 
         #main-sidebar.collapsed-mode p,
-        #main-sidebar.collapsed-mode span { 
-            display: none; 
-            opacity: 0;
-        }
+        #main-sidebar.collapsed-mode span { display: none; opacity: 0; }
 
-        #main-sidebar.collapsed-mode .nav-link {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
+        #main-sidebar.collapsed-mode .nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
         
-        #main-sidebar.collapsed-mode .logo-container {
-            width: 3rem; /* w-12 */
-            height: 3rem; /* h-12 */
-            margin-bottom: 1rem;
-        }
-        #main-sidebar.collapsed-mode .logo-icon {
-            font-size: 1.25rem; /* smaller icon */
-        }
+        #main-sidebar.collapsed-mode .logo-container { width: 3rem; height: 3rem; margin-bottom: 1rem; }
+        #main-sidebar.collapsed-mode .logo-icon { font-size: 1.25rem; }
     </style>
 </head>
 <body class="text-gray-800 bg-gray-50 overflow-hidden font-sans">
@@ -47,7 +34,7 @@
                  <div class="logo-container w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3 transition-all duration-300">
                     <i class="ph ph-drop text-3xl text-white logo-icon"></i>
                 </div>
-                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الخيرات</h1>
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الفلوجة</h1>
                 <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
             </div>
             <nav id="sidebar-nav"></nav>
@@ -71,11 +58,17 @@
                     <div class="flex items-center gap-6">
                         <div class="flex items-center gap-3 pl-6 border-l border-gray-100">
                             <div class="text-right hidden md:block">
-                                <h3 class="text-sm font-bold text-gray-800 leading-tight">المسؤول</h3>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
+                                <!-- Dynamic Name -->
+                                <h3 id="header-user-name" class="text-sm font-bold text-gray-800 leading-tight">المسؤول</h3>
+                                <!-- Dynamic Role -->
+                                <p id="header-user-role" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
                             </div>
-                            <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20">
-                                م
+                            <!-- Updated Header Avatar Area -->
+                            <div class="relative group cursor-pointer">
+                                <div id="header-user-avatar" class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20 overflow-hidden">
+                                    <span>م</span> <!-- Default Letter -->
+                                    <img id="header-user-img" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                                </div>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -88,15 +81,9 @@
 
                 <div class="px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50">
                     <div class="bg-white border border-gray-200 p-1 rounded-lg flex items-center shadow-sm">
-                        <button id="view-drivers" class="px-4 py-1.5 rounded-md text-sm font-bold transition-all shadow-sm bg-blue-50 text-blue-600">
-                            السائقين
-                        </button>
-                        <button id="view-assistants" class="px-4 py-1.5 rounded-md text-sm font-bold transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-50">
-                            المساعدين
-                        </button>
-                        <button id="view-employees" class="px-4 py-1.5 rounded-md text-sm font-bold transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-50">
-                            الموظفين
-                        </button>
+                        <button id="view-drivers" class="px-4 py-1.5 rounded-md text-sm font-bold transition-all shadow-sm bg-blue-50 text-blue-600">السائقين</button>
+                        <button id="view-assistants" class="px-4 py-1.5 rounded-md text-sm font-bold transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-50">المساعدين</button>
+                        <button id="view-employees" class="px-4 py-1.5 rounded-md text-sm font-bold transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-50">الموظفين</button>
                     </div>
                     
                     <div class="flex items-center gap-3">
@@ -151,7 +138,23 @@
             
             <form id="driver-form" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                 <input type="hidden" id="driver-id">
-                <input type="hidden" id="driver-role"> 
+                <input type="hidden" id="driver-role">
+                <input type="hidden" id="existing-photo-url">
+
+                <!-- Profile Photo Section (NEW) -->
+                <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <div class="relative w-20 h-20 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+                        <img id="preview-photo" src="" class="w-full h-full object-cover hidden">
+                        <div id="preview-placeholder" class="w-full h-full flex items-center justify-center text-gray-400">
+                            <i class="ph-fill ph-user text-3xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">الصورة الشخصية</label>
+                        <input type="file" id="driver-photo" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors">
+                        <p class="text-[10px] text-gray-400 mt-1">يفضل استخدام صورة مربعة واضحة</p>
+                    </div>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-1">
@@ -163,7 +166,6 @@
                         <input type="text" id="driver-username" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none dir-ltr text-left" placeholder="user_123">
                     </div>
                     
-                    <!-- Phone Inputs with Max/Min Length -->
                     <div class="space-y-1 md:col-span-2">
                         <label class="text-sm font-bold text-gray-700">رقم الهاتف الأساسي <span class="text-red-500">*</span></label>
                         <div class="relative">
@@ -194,7 +196,6 @@
 
                 <div id="driver-specific-fields" class="hidden space-y-1">
                     <label class="text-sm font-bold text-gray-700">نوع/اسم السيارة</label>
-                    <!-- CHANGED: From INPUT to SELECT -->
                     <select id="driver-car" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none">
                         <option value="">اختر السيارة...</option>
                     </select>

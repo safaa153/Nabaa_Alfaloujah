@@ -34,6 +34,25 @@ export const AreasData = {
         }
     },
 
+    // NEW: Fetch User Profile (Accountant)
+    fetchUserProfile: async function() {
+        if (!supabase) return null;
+        try {
+            const { data, error } = await supabase
+                .from('drivers')
+                .select('name, job_title, photo_url')
+                .eq('job_title', 'محاسب')
+                .limit(1)
+                .maybeSingle();
+            
+            if (error) return null;
+            return data;
+        } catch (error) {
+            console.error("Fetch Profile Error:", error);
+            return null;
+        }
+    },
+
     getCustomerCounts: async function() {
         // Assuming customers table has 'area_id'
         const { data } = await supabase.from('customers').select('area_id');

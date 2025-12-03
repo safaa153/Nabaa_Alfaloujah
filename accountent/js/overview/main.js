@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // This callback runs immediately on load, AND whenever data changes
         updateView(data);
     });
+
+    // NEW: Load Header Profile
+    loadHeaderProfile();
 });
 
 function updateView(data) {
@@ -20,4 +23,12 @@ function updateView(data) {
 
     // Render Alerts (Empty for now)
     OverviewUI.renderAlerts('alerts-container', data.alerts);
+}
+
+// UPDATED: Function to load and update profile (Name, Role, Photo)
+async function loadHeaderProfile() {
+    const profile = await OverviewData.fetchUserProfile();
+    if (profile) {
+        OverviewUI.updateHeaderProfile(profile);
+    }
 }

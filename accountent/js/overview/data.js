@@ -31,6 +31,26 @@ export const OverviewData = {
         callback(data);
     },
 
+    // UPDATED: Fetch Full User Profile (Accountant)
+    fetchUserProfile: async function() {
+        if (!supabase) return null;
+        try {
+            // Fetch name, job_title, photo_url
+            const { data, error } = await supabase
+                .from('drivers')
+                .select('name, job_title, photo_url')
+                .eq('job_title', 'محاسب')
+                .limit(1)
+                .maybeSingle();
+            
+            if (error) return null;
+            return data;
+        } catch (error) {
+            console.error("Fetch Profile Error:", error);
+            return null;
+        }
+    },
+
     fetchAllData: async function() {
         try {
             const [stats, tanks] = await Promise.all([

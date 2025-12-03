@@ -5,7 +5,7 @@ import { AuthService } from '../../../Settings/auth.js';
 
 let allStaff = [];
 let tankTypes = [];
-let allCars = []; // Store available cars
+let allCars = []; 
 let currentView = 'driver'; 
 
 document.addEventListener('DOMContentLoaded', initApp);
@@ -14,6 +14,16 @@ function initApp() {
     setupEventListeners();
     refreshData();
     setupRealtimeSubscription();
+    // NEW: Load Header Profile
+    loadHeaderProfile();
+}
+
+// UPDATED: Function to load and update profile (Name, Role, Photo)
+async function loadHeaderProfile() {
+    const profile = await DriversData.fetchUserProfile();
+    if (profile) {
+        DriversUI.updateHeaderProfile(profile);
+    }
 }
 
 function setupRealtimeSubscription() {
@@ -21,7 +31,10 @@ function setupRealtimeSubscription() {
     if (!supabase) return;
 
     supabase.channel('drivers-page-realtime')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => refreshData())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => {
+            refreshData();
+            loadHeaderProfile(); // Refresh header if profile changes
+        })
         .subscribe();
 }
 
@@ -29,7 +42,7 @@ function refreshData() {
     Promise.all([
         DriversData.fetchDrivers(),
         DriversData.fetchTankTypes(),
-        DriversData.fetchCars() // Fetch cars here
+        DriversData.fetchCars() 
     ]).then(([drivers, tanks, cars]) => {
         allStaff = drivers;
         tankTypes = tanks;
@@ -62,7 +75,6 @@ function setupEventListeners() {
     document.getElementById('view-employees').addEventListener('click', () => { currentView = 'employee'; renderCurrentView(); });
 
     document.getElementById('btn-add-driver').addEventListener('click', () => {
-        // Pass allCars to modal
         DriversUI.openModal(false, currentView, tankTypes, allStaff, allCars);
     });
 
@@ -106,29 +118,44 @@ async function handleFormSubmit(e) {
         return;
     }
 
-    const payload = {
-        role: role,
-        name: ui.name.value,
-        username: ui.username.value || null,
-        phone: ui.phone1.value,
-        phone2: ui.phone2.value || null,
-        phone3: ui.phone3.value || null,
-        is_active: ui.status.value === "true",
-    };
-
-    if (role === 'driver') {
-        payload.car_name = ui.carName.value || null;
-        payload.commission_rules = getCommissionRules();
-    } else if (role === 'assistant') {
-        payload.linked_driver_id = ui.linkedDriver.value || null;
-        payload.commission_rules = getCommissionRules();
-    } else if (role === 'employee') {
-        payload.job_title = ui.jobTitle.value;
-        payload.salary = parseInt(ui.salary.value) || 0;
-        payload.job_description = ui.jobDesc.value || '';
-    }
-
     try {
+        // 1. Upload Photo if selected
+        let photoUrl = ui.existingPhotoUrl.value;
+        const photoFile = ui.photo.files[0];
+        
+        if (photoFile) {
+            Swal.fire({
+                title: 'جاري رفع الصورة...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+            photoUrl = await DriversData.uploadProfileImage(photoFile);
+            Swal.close();
+        }
+
+        const payload = {
+            role: role,
+            name: ui.name.value,
+            username: ui.username.value || null,
+            phone: ui.phone1.value,
+            phone2: ui.phone2.value || null,
+            phone3: ui.phone3.value || null,
+            is_active: ui.status.value === "true",
+            photo_url: photoUrl // Save the URL
+        };
+
+        if (role === 'driver') {
+            payload.car_name = ui.carName.value || null;
+            payload.commission_rules = getCommissionRules();
+        } else if (role === 'assistant') {
+            payload.linked_driver_id = ui.linkedDriver.value || null;
+            payload.commission_rules = getCommissionRules();
+        } else if (role === 'employee') {
+            payload.job_title = ui.jobTitle.value;
+            payload.salary = parseInt(ui.salary.value) || 0;
+            payload.job_description = ui.jobDesc.value || '';
+        }
+
         if (id) {
             await DriversData.updateDriver(id, payload);
             DriversUI.showSuccess('تم التعديل', 'تم تحديث البيانات بنجاح');
@@ -189,7 +216,6 @@ async function handleTableActions(e) {
     if (btn.classList.contains('btn-edit')) {
         const item = allStaff.find(d => d.id == id);
         if (item) {
-            // Pass allCars to modal
             DriversUI.openModal(true, item.role, tankTypes, allStaff, allCars);
             DriversUI.fillForm(item);
         }

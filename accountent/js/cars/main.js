@@ -12,6 +12,16 @@ function initApp() {
     setupEventListeners();
     refreshData();
     setupRealtimeSubscription();
+    // NEW: Load Header Profile
+    loadHeaderProfile();
+}
+
+// UPDATED: Function to load and update profile (Name, Role, Photo)
+async function loadHeaderProfile() {
+    const profile = await CarsData.fetchUserProfile();
+    if (profile) {
+        CarsUI.updateHeaderProfile(profile);
+    }
 }
 
 function setupRealtimeSubscription() {

@@ -9,6 +9,12 @@ export const CarsUI = {
     get form() { return document.getElementById('car-form'); },
     get submitBtn() { return document.getElementById('btn-submit-car'); },
     
+    // Header Elements
+    get headerName() { return document.getElementById('header-user-name'); },
+    get headerRole() { return document.getElementById('header-user-role'); },
+    get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
+    get headerAvatarImg() { return document.getElementById('header-user-img'); },
+
     inputs: {
         id: document.getElementById('car-id'),
         name: document.getElementById('car-name'),
@@ -27,6 +33,32 @@ export const CarsUI = {
         // Previews
         previewPhoto: document.getElementById('preview-car-photo'),
         previewId: document.getElementById('preview-id-photo')
+    },
+
+    // UPDATED: Update Header Profile (Name, Role, Photo)
+    updateHeaderProfile: function(profile) {
+        const container = this.headerAvatarContainer;
+        const img = this.headerAvatarImg;
+        if (!container || !img) return;
+
+        // Update Name and Role
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+
+        // Update Photo
+        if (profile.photo_url) {
+            img.src = profile.photo_url;
+            img.classList.remove('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) letterSpan.style.display = 'none';
+        } else {
+            img.classList.add('hidden');
+            const letterSpan = container.querySelector('span');
+            if(letterSpan) {
+                letterSpan.style.display = 'block';
+                if(profile.name) letterSpan.innerText = profile.name.charAt(0);
+            }
+        }
     },
 
     renderTable: function(list) {
