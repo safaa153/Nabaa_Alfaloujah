@@ -6,6 +6,7 @@ const supabase = AuthService.db;
 export const OverviewData = {
     
     subscription: null,
+    refreshTimer: null,
 
     init: async function(onUpdateCallback) {
         if (!supabase) return;
@@ -16,14 +17,23 @@ export const OverviewData = {
 
         if (this.subscription) supabase.removeChannel(this.subscription);
 
-        // Realtime Subscription
+        // Realtime Subscription with Debounce
         this.subscription = supabase
             .channel('overview-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'tank_types' }, () => this.refresh(onUpdateCallback))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => this.refresh(onUpdateCallback))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => this.refresh(onUpdateCallback))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'areas' }, () => this.refresh(onUpdateCallback))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tank_types' }, () => this.debouncedRefresh(onUpdateCallback))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => this.debouncedRefresh(onUpdateCallback))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => this.debouncedRefresh(onUpdateCallback))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'areas' }, () => this.debouncedRefresh(onUpdateCallback))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'cars' }, () => this.debouncedRefresh(onUpdateCallback))
             .subscribe();
+    },
+
+    debouncedRefresh: function(callback) {
+        if (this.refreshTimer) clearTimeout(this.refreshTimer);
+        this.refreshTimer = setTimeout(async () => {
+            const data = await this.fetchAllData();
+            callback(data);
+        }, 500); 
     },
 
     refresh: async function(callback) {
@@ -31,24 +41,63 @@ export const OverviewData = {
         callback(data);
     },
 
-    // UPDATED: Fetch Full User Profile (Accountant)
+    // --- FIXED: Fetch 'photo_url' directly from column (Overview Page) ---
     fetchUserProfile: async function() {
         if (!supabase) return null;
         try {
-            // Fetch name, job_title, photo_url
-            const { data, error } = await supabase
-                .from('drivers')
-                .select('name, job_title, photo_url')
-                .eq('job_title', 'محاسب')
-                .limit(1)
-                .maybeSingle();
+            // 1. Get Logged-in User ID
+            const { data: { user } } = await supabase.auth.getUser();
             
-            if (error) return null;
-            return data;
+            let profile = null;
+
+            if (user) {
+                // 2. Try Primary Match: User ID matches Driver ID
+                const { data } = await supabase
+                    .from('drivers')
+                    // UPDATED: Selecting photo_url directly
+                    .select('name, role, photo_url') 
+                    .eq('id', user.id)
+                    .maybeSingle();
+                
+                if (data) profile = data;
+            }
+
+            // 3. Fallback: If ID match failed, find the first 'employee'
+            if (!profile) {
+                const { data } = await supabase
+                    .from('drivers')
+                    // UPDATED: Selecting photo_url directly
+                    .select('name, role, photo_url')
+                    .eq('role', 'employee') 
+                    .limit(1)
+                    .maybeSingle();
+                profile = data;
+            }
+
+            if (!profile) return null;
+
+            return {
+                name: profile.name,
+                job_title: this.translateRole(profile.role),
+                // UPDATED: No longer checking details.photo_url
+                photo_url: profile.photo_url || null
+            };
+
         } catch (error) {
             console.error("Fetch Profile Error:", error);
             return null;
         }
+    },
+
+    translateRole: function(role) {
+        if (!role) return 'المسؤول';
+        const r = role.toLowerCase().trim();
+        if (r === 'employee') return 'محاسب / إداري';
+        if (r === 'driver') return 'سائق';
+        if (r === 'assistant') return 'مساعد';
+        if (r === 'manager') return 'المدير';
+        if (r === 'admin') return 'المسؤول';
+        return role;
     },
 
     fetchAllData: async function() {
@@ -67,72 +116,83 @@ export const OverviewData = {
 
     fetchStats: async function() {
         try {
-            // 1. Fetch Active Areas Count
+            // 1. Fetch Active Areas
             const { count: areaCount } = await supabase
                 .from('areas')
                 .select('*', { count: 'exact', head: true })
                 .eq('is_active', true);
 
-            // 2. Fetch Active Tank Types Count
+            // 2. Fetch Active Tank Types
             const { count: tankCount } = await supabase
                 .from('tank_types')
                 .select('*', { count: 'exact', head: true })
                 .eq('is_active', true);
 
-            // 3. Fetch ALL Active Staff (Drivers, Assistants, Employees)
+            // 3. Fetch Cars
+            const { count: carCount } = await supabase
+                .from('cars')
+                .select('*', { count: 'exact', head: true });
+
+            // 4. Fetch Staff Stats
             const { data: staff } = await supabase
                 .from('drivers')
                 .select('role')
                 .eq('is_active', true);
 
-            // Count them manually
             let drivers = 0;
             let assistants = 0;
             let employees = 0;
 
             if (staff) {
                 staff.forEach(person => {
-                    if (person.role === 'driver') drivers++;
-                    else if (person.role === 'assistant') assistants++;
-                    else if (person.role === 'employee') employees++;
+                    const role = person.role ? person.role.toLowerCase() : '';
+                    if (role === 'driver') drivers++;
+                    else if (role === 'assistant') assistants++;
+                    else if (role === 'employee') employees++;
                 });
             }
 
-            // Return Array of Stat Objects (Now with 3 separate cards for staff)
             return [
                 { 
                     id: 'areas', 
                     label: 'المناطق النشطة', 
                     value: areaCount || 0, 
-                    icon: 'ph-map-pin',
+                    icon: 'ph-map-pin', 
                     desc: 'تغطية التوزيع'
                 },
                 { 
                     id: 'tanks', 
                     label: 'أنواع الخزانات', 
                     value: tankCount || 0, 
-                    icon: 'ph-cylinder',
+                    icon: 'ph-cylinder', 
                     desc: 'أنواع متوفرة'
+                },
+                { 
+                    id: 'cars', 
+                    label: 'السيارات', 
+                    value: carCount || 0, 
+                    icon: 'ph-truck', 
+                    desc: 'مركبة بالخدمة'
                 },
                 { 
                     id: 'drivers', 
                     label: 'السائقين', 
                     value: drivers, 
-                    icon: 'ph-steering-wheel', // Driver Icon
+                    icon: 'ph-steering-wheel', 
                     desc: 'سائق نشط'
                 },
                 { 
                     id: 'assistants', 
                     label: 'المساعدين', 
                     value: assistants, 
-                    icon: 'ph-handshake', // Assistant Icon
+                    icon: 'ph-handshake', 
                     desc: 'مساعد نشط'
                 },
                 { 
                     id: 'employees', 
                     label: 'الموظفين', 
                     value: employees, 
-                    icon: 'ph-briefcase', // Employee Icon
+                    icon: 'ph-briefcase', 
                     desc: 'كادر إداري/فني'
                 }
             ];
@@ -145,7 +205,6 @@ export const OverviewData = {
 
     fetchTankLevels: async function() {
         try {
-            // Get Active Tanks
             const { data: tanks } = await supabase
                 .from('tank_types')
                 .select('id, name')
@@ -154,23 +213,27 @@ export const OverviewData = {
 
             if (!tanks || tanks.length === 0) return [];
 
-            // Get Customers to calculate distribution
-            const { data: customers } = await supabase.from('customers').select('tank_id');
+            const tankPromises = tanks.map(async (t) => {
+                const { count } = await supabase
+                    .from('customers')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('tank_id', t.id);
+                
+                return {
+                    name: t.name,
+                    count: count || 0
+                };
+            });
+
+            const results = await Promise.all(tankPromises);
             
-            const counts = {};
-            const total = customers ? customers.length : 0;
+            const total = results.reduce((sum, t) => sum + t.count, 0);
 
-            if (customers) {
-                customers.forEach(c => {
-                    if(c.tank_id) counts[c.tank_id] = (counts[c.tank_id] || 0) + 1;
-                });
-            }
-
-            return tanks.map(t => ({
-                name: t.name,
-                count: counts[t.id] || 0,
-                percentage: total > 0 ? Math.round(((counts[t.id] || 0) / total) * 100) : 0
+            return results.map(t => ({
+                ...t,
+                percentage: total > 0 ? Math.round((t.count / total) * 100) : 0
             }));
+
         } catch (error) {
             console.error("Tank Levels Error:", error);
             return [];

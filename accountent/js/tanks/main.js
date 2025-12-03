@@ -11,8 +11,10 @@ document.addEventListener('DOMContentLoaded', initApp);
 function initApp() {
     setupEventListeners();
     refreshTableData();
-    // NEW: Load Header Profile
+    // Load Header Profile
     loadHeaderProfile();
+    // NEW: Initialize Dark Mode Toggle
+    initThemeToggle();
 }
 
 async function loadHeaderProfile() {
@@ -178,6 +180,37 @@ function handleGridActions(e) {
             confirmButtonText: 'حسناً',
             confirmButtonColor: '#3b82f6', 
             customClass: { popup: 'rounded-2xl' }
+        });
+    }
+}
+
+// Theme Toggle Logic
+function initThemeToggle() {
+    const toggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const body = document.body;
+
+    // 1. Check local storage
+    if (localStorage.getItem('theme') === 'dark') {
+        body.classList.add('dark-mode');
+        if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+    }
+
+    // 2. Toggle Event
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            
+            const isDark = body.classList.contains('dark-mode');
+            
+            // Switch Icon
+            if (isDark) {
+                if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
+                localStorage.setItem('theme', 'light');
+            }
         });
     }
 }

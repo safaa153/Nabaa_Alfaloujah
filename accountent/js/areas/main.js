@@ -10,28 +10,24 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
     setupEventListeners();
-    refreshData();
-    // NEW: Load Header Profile
+    
+    // Initialize Data & Realtime
+    AreasData.init((data) => {
+        allAreas = data.areas;
+        driversList = data.drivers;
+        AreasUI.renderTable(allAreas);
+        loadHeaderProfile();
+    });
+
     loadHeaderProfile();
+    initThemeToggle();
 }
 
-// UPDATED: Function to load and update profile (Name, Role, Photo)
 async function loadHeaderProfile() {
     const profile = await AreasData.fetchUserProfile();
     if (profile) {
         AreasUI.updateHeaderProfile(profile);
     }
-}
-
-function refreshData() {
-    Promise.all([
-        AreasData.fetchAreas(),
-        AreasData.fetchDrivers()
-    ]).then(([areas, drivers]) => {
-        allAreas = areas;
-        driversList = drivers;
-        AreasUI.renderTable(allAreas);
-    });
 }
 
 function setupEventListeners() {
@@ -46,7 +42,10 @@ function setupEventListeners() {
     // Search
     document.getElementById('search-area').addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase();
-        const filtered = allAreas.filter(a => a.name.toLowerCase().includes(val));
+        const filtered = allAreas.filter(a => 
+            a.name.toLowerCase().includes(val) ||
+            (a.driver_name && a.driver_name.toLowerCase().includes(val)) // Added driver search
+        );
         AreasUI.renderTable(filtered);
     });
 
@@ -55,50 +54,43 @@ function setupEventListeners() {
     
     // Export
     document.getElementById('btn-export').addEventListener('click', () => {
+        if (!allAreas || allAreas.length === 0) {
+            AreasUI.showError('تنبيه', 'لا توجد بيانات للتصدير');
+            return;
+        }
         const data = allAreas.map((a, i) => ({
-            '#': i+1, 'المنطقة': a.name, 'السائق': a.driver_name, 'الزبائن': a.customer_count, 'الحالة': a.is_active ? 'فعال' : 'مغلق'
+            '#': i+1, 
+            'المنطقة': a.name, 
+            'السائق': a.driver_name, 
+            'الزبائن': a.customer_count, 
+            'الحالة': (a.is_active !== false) ? 'فعال' : 'غير فعال',
+            'تاريخ الإنشاء': new Date(a.created_at).toLocaleDateString('ar-EG')
         }));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "المناطق");
-        XLSX.writeFile(wb, "Areas.xlsx");
+        XLSX.writeFile(wb, `Areas_List_${new Date().toISOString().slice(0,10)}.xlsx`);
     });
 
-    // Logout Button Logic
+    // Logout
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
             e.preventDefault();
-            
             Swal.fire({
                 title: 'تسجيل الخروج؟',
                 text: "هل أنت متأكد من المغادرة؟",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444', // Red for Confirm
-                cancelButtonColor: '#3b82f6',  // Blue for Cancel
+                confirmButtonColor: '#ef4444', 
+                cancelButtonColor: '#3b82f6',  
                 confirmButtonText: 'خروج',
                 cancelButtonText: 'إلغاء',
-                customClass: {
-                    popup: 'rounded-3xl font-sans',
-                    title: 'text-xl font-bold text-gray-800',
-                    htmlContainer: 'text-gray-500'
-                }
+                customClass: { popup: 'rounded-2xl' }
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    try {
-                        // 1. Attempt standard logout
-                        await AuthService.logout();
-                    } catch (error) {
-                        console.error("Logout error:", error);
-                    } finally {
-                        // 2. Force clear storage to ensure Login page doesn't bounce us back
-                        localStorage.clear();
-                        sessionStorage.clear();
-                        
-                        // 3. Redirect to login.html (sibling file)
-                        window.location.replace('login.html'); 
-                    }
+                    await AuthService.logout();
+                    window.location.replace('../../index.html');
                 }
             });
         });
@@ -124,8 +116,11 @@ async function handleFormSubmit(e) {
             await AreasData.addArea(payload);
             AreasUI.showSuccess('تم الإضافة', 'تم إضافة المنطقة بنجاح');
         }
+        
         AreasUI.closeModal();
-        refreshData();
+        // Force Instant Refresh
+        AreasData.refresh();
+
     } catch (err) {
         AreasUI.showError('خطأ', err.message);
     }
@@ -145,13 +140,14 @@ async function handleTableActions(e) {
             confirmButtonText: 'حذف',
             cancelButtonText: 'إلغاء',
             confirmButtonColor: '#d33',
-            customClass: { popup: 'rounded-3xl' }
+            customClass: { popup: 'rounded-2xl' }
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
                     await AreasData.deleteArea(id);
                     AreasUI.showSuccess('تم الحذف', '');
-                    refreshData();
+                    // Force Instant Refresh
+                    AreasData.refresh();
                 } catch (err) {
                     AreasUI.showError('خطأ', err.message);
                 }
@@ -168,6 +164,31 @@ async function handleTableActions(e) {
     }
     
     if (btn.classList.contains('btn-customers')) {
-        AreasUI.showSuccess('تنبيه', 'عرض الزبائن قريباً');
+        AreasUI.showSuccess('تنبيه', 'سيتم إتاحة عرض الزبائن في التحديث القادم');
+    }
+}
+
+function initThemeToggle() {
+    const toggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const body = document.body;
+
+    if (localStorage.getItem('theme') === 'dark') {
+        body.classList.add('dark-mode');
+        if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            if (isDark) {
+                if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        });
     }
 }

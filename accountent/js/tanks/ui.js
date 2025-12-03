@@ -125,6 +125,12 @@ export const TanksUI = {
                         <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-users text-blue-500"></i> المشتركين</span>
                         <span class="font-bold text-gray-800">${tank.customer_count || 0}</span>
                     </div>
+
+                    <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
+                        <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-calendar text-orange-500"></i> مدة الدورة</span>
+                        <span class="font-bold text-gray-800">${tank.filling_days || '-'} <span class="text-[10px] text-gray-400">يوم</span></span>
+                    </div>
+
                     <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
                         <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-money text-green-500"></i> السعر</span>
                         <span class="font-bold text-gray-800">${parseInt(tank.price).toLocaleString()} <span class="text-[10px] text-gray-400">د.ع</span></span>
@@ -134,7 +140,6 @@ export const TanksUI = {
                 <div class="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto">
                     <span class="text-xs font-bold text-gray-400">الإجراءات</span>
                     <div class="flex gap-2">
-                         <!-- NEW: View Customers Button -->
                          <button class="btn-customers w-9 h-9 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center" 
                                 data-id="${tank.id}" title="عرض المشتركين">
                             <i class="ph-bold ph-users"></i>
@@ -155,12 +160,9 @@ export const TanksUI = {
             container.appendChild(card);
         });
 
-        // Add Event Listeners for buttons
-        container.querySelectorAll('.btn-edit').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Triggered in main.js via event delegation or custom event
-            });
-        });
+        // Add Event Listeners for buttons (Note: Main logic is handled via delegation in main.js, 
+        // but if specific listeners were needed here, they would go here. 
+        // Currently keeping it clean as per your main.js delegation structure).
     },
 
     openModal: function(isEdit = false) {

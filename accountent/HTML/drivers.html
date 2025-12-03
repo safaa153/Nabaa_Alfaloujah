@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محطة نبع الخيرات - إدارة الكادر</title>
+    <!-- FIXED: Consistent Title -->
+    <title>محطة نبع الفلوجة - إدارة الكادر</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -56,6 +57,12 @@
                     </div>
 
                     <div class="flex items-center gap-6">
+                        
+                        <!-- NEW: Dark Mode Toggle -->
+                        <button id="theme-toggle" class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                            <i class="ph ph-moon text-xl" id="theme-icon"></i>
+                        </button>
+
                         <div class="flex items-center gap-3 pl-6 border-l border-gray-100">
                             <div class="text-right hidden md:block">
                                 <!-- Dynamic Name -->
@@ -63,7 +70,7 @@
                                 <!-- Dynamic Role -->
                                 <p id="header-user-role" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
                             </div>
-                            <!-- Updated Header Avatar Area -->
+                            <!-- Header Avatar Area -->
                             <div class="relative group cursor-pointer">
                                 <div id="header-user-avatar" class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20 overflow-hidden">
                                     <span>م</span> <!-- Default Letter -->
@@ -141,7 +148,7 @@
                 <input type="hidden" id="driver-role">
                 <input type="hidden" id="existing-photo-url">
 
-                <!-- Profile Photo Section (NEW) -->
+                <!-- Profile Photo Section -->
                 <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <div class="relative w-20 h-20 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
                         <img id="preview-photo" src="" class="w-full h-full object-cover hidden">

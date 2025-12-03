@@ -9,7 +9,6 @@ export const CarsUI = {
     get form() { return document.getElementById('car-form'); },
     get submitBtn() { return document.getElementById('btn-submit-car'); },
     
-    // Header Elements
     get headerName() { return document.getElementById('header-user-name'); },
     get headerRole() { return document.getElementById('header-user-role'); },
     get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
@@ -24,28 +23,23 @@ export const CarsUI = {
         capacity: document.getElementById('car-capacity'),
         driver: document.getElementById('car-driver'),
         note: document.getElementById('car-note'),
-        // Files
         photo: document.getElementById('car-photo'),
         idPhoto: document.getElementById('car-id-photo'),
-        // Hidden URL holders
         existingPhoto: document.getElementById('existing-photo-url'),
         existingIdPhoto: document.getElementById('existing-id-photo-url'),
-        // Previews
         previewPhoto: document.getElementById('preview-car-photo'),
         previewId: document.getElementById('preview-id-photo')
     },
 
-    // UPDATED: Update Header Profile (Name, Role, Photo)
     updateHeaderProfile: function(profile) {
+        if (!profile) return;
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+
         const container = this.headerAvatarContainer;
         const img = this.headerAvatarImg;
         if (!container || !img) return;
 
-        // Update Name and Role
-        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
-        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
-
-        // Update Photo
         if (profile.photo_url) {
             img.src = profile.photo_url;
             img.classList.remove('hidden');
@@ -81,10 +75,8 @@ export const CarsUI = {
                 <td class="font-bold text-gray-800 p-4">${item.name}</td>
                 <td class="text-center font-mono text-xs text-gray-600">${item.car_number || '-'}</td>
                 <td class="text-center text-sm font-medium text-blue-700 bg-blue-50 rounded-lg px-2 py-1 mx-auto w-fit">${item.driver_name}</td>
-                <!-- CHANGED: Removed dir-ltr and changed L to لتر -->
                 <td class="text-center text-gray-600">${item.tank_capacity ? item.tank_capacity.toLocaleString() + ' لتر' : '-'}</td>
                 <td class="text-center text-xs">${item.color || '-'}</td>
-                <!-- ADDED: Note column -->
                 <td class="text-center text-xs text-gray-500 max-w-[150px] truncate" title="${item.note || ''}">${item.note || '-'}</td>
                 
                 <td class="text-center">
@@ -124,7 +116,6 @@ export const CarsUI = {
         
         document.getElementById('modal-title').innerText = isEdit ? 'تعديل بيانات السيارة' : 'إضافة سيارة جديدة';
         
-        // Populate Drivers
         this.inputs.driver.innerHTML = '<option value="">اختر السائق...</option>' + 
             drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
     },
@@ -139,9 +130,12 @@ export const CarsUI = {
         this.inputs.driver.value = data.driver_id || '';
         this.inputs.note.value = data.note || '';
         
-        // File Previews (Logic: if URL exists, show link)
         this.inputs.existingPhoto.value = data.photo_url || '';
         this.inputs.existingIdPhoto.value = data.id_photo_url || '';
+
+        // Reset Links
+        this.inputs.previewPhoto.classList.add('hidden');
+        this.inputs.previewId.classList.add('hidden');
 
         if(data.photo_url) {
             this.inputs.previewPhoto.classList.remove('hidden');

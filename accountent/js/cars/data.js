@@ -3,44 +3,86 @@ import { AuthService } from '../../../Settings/auth.js';
 
 const supabase = AuthService.db;
 const CARS_TABLE = 'cars';
-const BUCKET_NAME = 'car-photos'; // UPDATED: Correct bucket name
+const BUCKET_NAME = 'car-photos'; 
 
 export const CarsData = { 
     
-    fetchCars: async function() {
-        if (!supabase) return [];
+    subscription: null,
+    refreshTimer: null,
+    onDataChange: null, // NEW: Store the callback
+
+    // Centralized Init
+    init: function(onDataChangedCallback) {
+        if (!supabase) return;
+        
+        // Save callback so we can call it manually later
+        this.onDataChange = onDataChangedCallback; 
+
+        this.fetchAllData().then(data => onDataChangedCallback(data));
+        this.subscribeToChanges(onDataChangedCallback);
+    },
+
+    // NEW: Manual Refresh Function (Guarantees instant update)
+    refresh: async function() {
+        if (this.onDataChange) {
+            const data = await this.fetchAllData();
+            this.onDataChange(data);
+        }
+    },
+
+    // Combined Fetcher
+    fetchAllData: async function() {
         try {
-            // 1. Fetch all cars (raw data)
-            const carsResponse = await supabase
+            const [cars, drivers] = await Promise.all([
+                this.fetchCars(),
+                this.fetchDrivers()
+            ]);
+            
+            // Merge Driver Names into Cars
+            const driversMap = {};
+            drivers.forEach(d => { driversMap[d.id] = d.name; });
+
+            const mergedCars = cars.map(car => ({
+                ...car,
+                driver_name: driversMap[car.driver_id] || 'غير محدد'
+            }));
+
+            return { cars: mergedCars, drivers };
+        } catch (error) {
+            console.error("Fetch All Error:", error);
+            return { cars: [], drivers: [] };
+        }
+    },
+
+    debouncedRefresh: function(callback) {
+        if (this.refreshTimer) clearTimeout(this.refreshTimer);
+        this.refreshTimer = setTimeout(async () => {
+            const data = await this.fetchAllData();
+            callback(data);
+        }, 500); 
+    },
+
+    subscribeToChanges: function(callback) {
+        if (this.subscription) supabase.removeChannel(this.subscription);
+        
+        this.subscription = supabase
+            .channel('cars-page-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: CARS_TABLE }, () => this.debouncedRefresh(callback))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => this.debouncedRefresh(callback))
+            .subscribe();
+    },
+
+    fetchCars: async function() {
+        try {
+            const { data, error } = await supabase
                 .from(CARS_TABLE)
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (carsResponse.error) throw carsResponse.error;
-
-            // 2. Fetch all drivers (for manual name lookup)
-            const driversResponse = await supabase
-                .from('drivers')
-                .select('id, name');
-            
-            if (driversResponse.error) throw driversResponse.error;
-
-            const driversMap = {};
-            (driversResponse.data || []).forEach(d => {
-                driversMap[d.id] = d.name;
-            });
-
-            // 3. Merge manually (Take ID and find name)
-            return (carsResponse.data || []).map(car => {
-                const driverName = driversMap[car.driver_id] || 'غير محدد';
-                return {
-                    ...car,
-                    driver_name: driverName
-                };
-            });
-
+            if (error) throw error;
+            return data || [];
         } catch (error) {
-            console.error("Fetch Cars System Error:", error);
+            console.error("Fetch Cars Error:", error);
             return [];
         }
     },
@@ -61,85 +103,90 @@ export const CarsData = {
         }
     },
 
-    // NEW: Fetch User Profile (Accountant)
     fetchUserProfile: async function() {
         if (!supabase) return null;
         try {
-            // Fetch name, job_title, photo_url
-            const { data, error } = await supabase
-                .from('drivers')
-                .select('name, job_title, photo_url')
-                .eq('job_title', 'محاسب')
-                .limit(1)
-                .maybeSingle();
-            
-            if (error) return null;
-            return data;
+            const { data: { user } } = await supabase.auth.getUser();
+            let profile = null;
+
+            if (user) {
+                const { data } = await supabase
+                    .from('drivers')
+                    .select('name, role, photo_url') 
+                    .eq('id', user.id)
+                    .maybeSingle();
+                if (data) profile = data;
+            }
+
+            if (!profile) {
+                const { data } = await supabase
+                    .from('drivers')
+                    .select('name, role, photo_url')
+                    .eq('role', 'employee') 
+                    .limit(1)
+                    .maybeSingle();
+                profile = data;
+            }
+
+            if (!profile) return null;
+
+            return {
+                name: profile.name,
+                job_title: this.translateRole(profile.role),
+                photo_url: profile.photo_url || null
+            };
         } catch (error) {
             console.error("Fetch Profile Error:", error);
             return null;
         }
     },
 
-    // --- FILE UPLOAD LOGIC ---
-    uploadFile: async function(file, path) {
+    translateRole: function(role) {
+        if (!role) return 'المسؤول';
+        const r = role.toLowerCase().trim();
+        if (r === 'employee') return 'محاسب / إداري';
+        if (r === 'driver') return 'سائق';
+        if (r === 'assistant') return 'مساعد';
+        if (r === 'manager') return 'المدير';
+        if (r === 'admin') return 'المسؤول';
+        return role;
+    },
+
+    uploadFile: async function(file, bucket) {
         if (!file) return null;
         try {
-            // Sanitize filename to avoid issues with Arabic characters or spaces
             const fileExt = file.name.split('.').pop();
-            const cleanPath = path.replace(/[^a-zA-Z0-9]/g, '-'); 
-            const fileName = `${cleanPath}-${Date.now()}.${fileExt}`;
+            const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '-');
+            const fileName = `${cleanName}-${Date.now()}.${fileExt}`;
 
-            // 1. Upload File
-            const { data, error } = await supabase.storage
-                .from(BUCKET_NAME)
-                .upload(fileName, file, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
+            const { error } = await supabase.storage
+                .from(bucket)
+                .upload(fileName, file, { cacheControl: '3600', upsert: false });
 
-            if (error) {
-                console.error("❌ Storage Upload Error:", error);
-                if (error.message.includes('new row violates row-level security policy')) {
-                    throw new Error("خطأ صلاحيات: يرجى تفعيل Policies في إعدادات Storage");
-                }
-                throw error;
-            }
+            if (error) throw error;
 
-            // 2. Get Public URL
             const { data: { publicUrl } } = supabase.storage
-                .from(BUCKET_NAME)
+                .from(bucket)
                 .getPublicUrl(fileName);
 
             return publicUrl;
         } catch (error) {
-            console.error("Upload Logic Error:", error);
-            // Pass the specific error message to the UI
-            throw new Error(error.message || "فشل في رفع الصورة");
+            throw new Error("فشل رفع الملف: " + error.message);
         }
     },
 
     addCar: async function(payload) {
         const { error } = await supabase.from(CARS_TABLE).insert([payload]);
-        if (error) {
-            console.error("Add Car Error:", error.message);
-            throw error;
-        }
+        if (error) throw error;
     },
 
     updateCar: async function(id, payload) {
         const { error } = await supabase.from(CARS_TABLE).update(payload).eq('id', id);
-        if (error) {
-            console.error("Update Car Error:", error.message);
-            throw error;
-        }
+        if (error) throw error;
     },
 
     deleteCar: async function(id) {
         const { error } = await supabase.from(CARS_TABLE).delete().eq('id', id);
-        if (error) {
-            console.error("Delete Car Error:", error.message);
-            throw error;
-        }
+        if (error) throw error;
     }
 };

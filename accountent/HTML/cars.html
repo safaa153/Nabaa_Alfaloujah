@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محطة نبع الخيرات - إدارة السيارات</title>
+    <!-- FIXED: Consistent Title -->
+    <title>محطة نبع الفلوجة - إدارة السيارات</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -49,6 +50,12 @@
                         </h2>
                     </div>
                     <div class="flex items-center gap-6">
+                        
+                        <!-- NEW: Dark Mode Toggle -->
+                        <button id="theme-toggle" class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                            <i class="ph ph-moon text-xl" id="theme-icon"></i>
+                        </button>
+
                         <div class="flex items-center gap-3 pl-6 border-l border-gray-100">
                             <div class="text-right hidden md:block">
                                 <!-- Dynamic Name -->

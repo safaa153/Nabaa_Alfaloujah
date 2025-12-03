@@ -41,17 +41,15 @@ export const DriversUI = {
         existingPhotoUrl: document.getElementById('existing-photo-url')
     },
 
-    // UPDATED: Update Header Profile (Name, Role, Photo)
     updateHeaderProfile: function(profile) {
+        if (!profile) return;
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+
         const container = this.headerAvatarContainer;
         const img = this.headerAvatarImg;
         if (!container || !img) return;
 
-        // Update Name and Role
-        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
-        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
-
-        // Update Photo
         if (profile.photo_url) {
             img.src = profile.photo_url;
             img.classList.remove('hidden');
@@ -84,6 +82,10 @@ export const DriversUI = {
         list.forEach((item, index) => {
             const isActive = item.is_active !== false;
             
+            // Format Created At Date
+            const createdDate = item.created_at ? new Date(item.created_at).toLocaleDateString('ar-EG') : '-';
+            const createdBy = item.created_by_name || '-';
+
             // Avatar Rendering
             const avatarHtml = item.photo_url 
                 ? `<img src="${item.photo_url}" class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm">`
@@ -145,7 +147,6 @@ export const DriversUI = {
             row.innerHTML = `
                 <td class="font-bold text-gray-400 p-4">#${index + 1}</td>
                 
-                <!-- Name Column with Avatar -->
                 <td class="p-4">
                     <div class="flex items-center gap-3">
                         ${avatarHtml}
@@ -156,6 +157,10 @@ export const DriversUI = {
                 <td class="p-4 dir-ltr text-right text-gray-600 font-mono text-xs">${item.phone}</td>
                 
                 ${extraColumns}
+
+                <!-- NEW: Created By & Created At Columns -->
+                <td class="text-center text-xs text-gray-500 font-medium">${createdBy}</td>
+                <td class="text-center text-xs text-gray-400 font-mono dir-ltr">${createdDate}</td>
                 
                 <td class="text-center p-4">
                     <span class="badge ${isActive ? 'badge-active' : 'badge-inactive'}">
@@ -187,13 +192,20 @@ export const DriversUI = {
         });
     },
 
+    // UPDATED: Added headers for 'Created By' and 'Date'
     updateHeaders: function(view) {
         let cols = '';
+        const commonHeaders = `
+            <th class="text-center font-medium text-gray-500">أضيف بواسطة</th>
+            <th class="text-center font-medium text-gray-500">تاريخ الإضافة</th>
+        `;
+
         if (view === 'driver') {
             cols = `
                 <th>#</th> <th>الاسم</th> <th>الهاتف</th>
                 <th class="text-center">عدد المناطق</th>
                 <th class="text-center">السيارة</th>
+                ${commonHeaders}
                 <th class="text-center">الحالة</th>
                 <th class="text-center">أرقام الهاتف</th>
                 <th class="text-center">العمولة</th>
@@ -204,6 +216,7 @@ export const DriversUI = {
              cols = `
                 <th>#</th> <th>الاسم</th> <th>الهاتف</th>
                 <th class="text-center" colspan="2">السائق المسؤول</th>
+                ${commonHeaders}
                 <th class="text-center">الحالة</th>
                 <th class="text-center">أرقام الهاتف</th>
                 <th class="text-center">العمولة</th>
@@ -214,6 +227,7 @@ export const DriversUI = {
                 <th>#</th> <th>الاسم</th> <th>الهاتف</th>
                 <th class="text-center">الوظيفة</th>
                 <th class="text-center">الراتب</th>
+                ${commonHeaders}
                 <th class="text-center">الحالة</th>
                 <th class="text-center">أرقام الهاتف</th>
                 <th class="text-center">الوصف</th>
