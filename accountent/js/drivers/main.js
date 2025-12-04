@@ -1,6 +1,7 @@
 // accountent/js/drivers/main.js
 import { DriversData } from './data.js';
 import { DriversUI } from './ui.js';
+import { CustomersModal } from './customers_modal.js';
 import { AuthService } from '../../../Settings/auth.js'; 
 
 let allStaff = [];
@@ -12,18 +13,11 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
     setupEventListeners();
-    
-    DriversData.init((data) => {
-        allStaff = data.drivers;
-        tankTypes = data.tanks;
-        allCars = data.cars;
-        
-        renderCurrentView();
-        loadHeaderProfile();
-    });
-
+    refreshData();
+    setupRealtimeSubscription();
     loadHeaderProfile();
     initThemeToggle();
+    CustomersModal.init(); // Initialize the Modal
 }
 
 async function loadHeaderProfile() {
@@ -31,6 +25,31 @@ async function loadHeaderProfile() {
     if (profile) {
         DriversUI.updateHeaderProfile(profile);
     }
+}
+
+function setupRealtimeSubscription() {
+    const supabase = AuthService.db;
+    if (!supabase) return;
+
+    supabase.channel('drivers-page-realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => {
+            refreshData();
+            loadHeaderProfile(); // Refresh header if profile changes
+        })
+        .subscribe();
+}
+
+function refreshData() {
+    Promise.all([
+        DriversData.fetchDrivers(),
+        DriversData.fetchTankTypes(),
+        DriversData.fetchCars() 
+    ]).then(([drivers, tanks, cars]) => {
+        allStaff = drivers;
+        tankTypes = tanks;
+        allCars = cars;
+        renderCurrentView();
+    });
 }
 
 function renderCurrentView() {
@@ -64,11 +83,6 @@ function setupEventListeners() {
     document.getElementById('btn-cancel-modal').addEventListener('click', () => DriversUI.closeModal());
     document.getElementById('driver-form').addEventListener('submit', handleFormSubmit);
 
-    const btnExport = document.getElementById('btn-export');
-    if (btnExport) {
-        btnExport.addEventListener('click', exportToExcel);
-    }
-
     document.getElementById('search-driver').addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase();
         const filtered = allStaff.filter(d => 
@@ -81,59 +95,7 @@ function setupEventListeners() {
     document.getElementById('drivers-table-body').addEventListener('click', handleTableActions);
 }
 
-function exportToExcel() {
-    if (!allStaff || allStaff.length === 0) {
-        DriversUI.showError('تنبيه', 'لا توجد بيانات للتصدير');
-        return;
-    }
-
-    const dataToExport = allStaff
-        .filter(item => item.role === currentView)
-        .map(item => {
-            const baseData = {
-                "الاسم": item.name,
-                "الهاتف": item.phone,
-                "الحالة": item.is_active ? 'نشط' : 'متوقف',
-                "تاريخ الإضافة": new Date(item.created_at).toLocaleDateString('ar-EG'),
-                "أضيف بواسطة": item.created_by_name || '-'
-            };
-
-            if (currentView === 'driver') {
-                return {
-                    ...baseData,
-                    "السيارة": item.car_name || '-',
-                    "عدد المناطق": item.area_count || 0
-                };
-            } else if (currentView === 'assistant') {
-                const boss = allStaff.find(d => d.id === item.linked_driver_id);
-                return {
-                    ...baseData,
-                    "يعمل مع": boss ? boss.name : '-'
-                };
-            } else {
-                return {
-                    ...baseData,
-                    "الوظيفة": item.job_title || '-',
-                    "الراتب": item.salary || 0
-                };
-            }
-        });
-
-    if (dataToExport.length === 0) {
-        DriversUI.showError('تنبيه', 'لا توجد بيانات في القائمة الحالية');
-        return;
-    }
-
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Staff_Data");
-
-    const viewNames = { 'driver': 'السائقين', 'assistant': 'المساعدين', 'employee': 'الموظفين' };
-    const fileName = `Kader_${viewNames[currentView]}_${new Date().toISOString().slice(0,10)}.xlsx`;
-
-    XLSX.writeFile(wb, fileName);
-}
-
+// Phone Validation Helper
 function isValidPhone(phone) {
     return /^\d{11}$/.test(phone);
 }
@@ -148,13 +110,25 @@ async function handleFormSubmit(e) {
         DriversUI.showError('خطأ', 'رقم الهاتف الأساسي يجب أن يكون 11 رقم');
         return;
     }
+    if (ui.phone2.value && !isValidPhone(ui.phone2.value)) {
+        DriversUI.showError('خطأ', 'رقم الهاتف الثاني يجب أن يكون 11 رقم');
+        return;
+    }
+    if (ui.phone3.value && !isValidPhone(ui.phone3.value)) {
+        DriversUI.showError('خطأ', 'رقم الهاتف الثالث يجب أن يكون 11 رقم');
+        return;
+    }
 
     try {
         let photoUrl = ui.existingPhotoUrl.value;
         const photoFile = ui.photo.files[0];
         
         if (photoFile) {
-            Swal.fire({ title: 'جاري رفع الصورة...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({
+                title: 'جاري رفع الصورة...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
             photoUrl = await DriversData.uploadProfileImage(photoFile);
             Swal.close();
         }
@@ -169,13 +143,6 @@ async function handleFormSubmit(e) {
             is_active: ui.status.value === "true",
             photo_url: photoUrl
         };
-
-        if (!id) {
-            const currentUser = await DriversData.fetchUserProfile();
-            if (currentUser && currentUser.name) {
-                payload.created_by_name = currentUser.name;
-            }
-        }
 
         if (role === 'driver') {
             payload.car_name = ui.carName.value || null;
@@ -196,11 +163,8 @@ async function handleFormSubmit(e) {
             await DriversData.addDriver(payload);
             DriversUI.showSuccess('تم الإضافة', 'تم إضافة السجل بنجاح');
         }
-        
         DriversUI.closeModal();
-        // UPDATED: Force Instant Refresh
-        DriversData.refresh();
-        
+        refreshData();
     } catch (err) {
         DriversUI.showError('خطأ', err.message);
     }
@@ -224,6 +188,7 @@ async function handleTableActions(e) {
     if (!btn) return;
     const id = btn.dataset.id;
 
+    // 1. Delete
     if (btn.classList.contains('btn-delete')) {
         Swal.fire({
             title: 'حذف السجل؟',
@@ -239,8 +204,7 @@ async function handleTableActions(e) {
                 try {
                     await DriversData.deleteDriver(id);
                     DriversUI.showSuccess('تم الحذف', '');
-                    // UPDATED: Force Instant Refresh
-                    DriversData.refresh();
+                    refreshData();
                 } catch (err) {
                     DriversUI.showError('خطأ', err.message);
                 }
@@ -248,6 +212,7 @@ async function handleTableActions(e) {
         });
     }
 
+    // 2. Edit
     if (btn.classList.contains('btn-edit')) {
         const item = allStaff.find(d => d.id == id);
         if (item) {
@@ -256,17 +221,15 @@ async function handleTableActions(e) {
         }
     }
 
+    // 3. View Customers (Triggers Modal)
     if (btn.classList.contains('btn-customers')) {
-        Swal.fire({
-            icon: 'info',
-            title: 'تنبيه',
-            text: 'سيتم إتاحة عرض الزبائن وتحديد مواقعهم في التحديث القادم',
-            confirmButtonText: 'حسناً',
-            confirmButtonColor: '#3b82f6',
-            customClass: { popup: 'rounded-2xl' }
-        });
+        const item = allStaff.find(d => d.id == id);
+        if (item) {
+            CustomersModal.open(id, item.name);
+        }
     }
 
+    // 4. View Phones
     if (btn.classList.contains('btn-phones')) {
         const item = allStaff.find(d => d.id == id);
         if (!item) return;
@@ -286,16 +249,26 @@ async function handleTableActions(e) {
         if (item.phone) phoneHtml += addPhoneRow(item.phone, 'رقم أساسي', 'blue');
         if (item.phone2) phoneHtml += addPhoneRow(item.phone2, 'رقم ثانوي', 'gray');
         if (item.phone3) phoneHtml += addPhoneRow(item.phone3, 'رقم إضافي', 'gray');
-
         phoneHtml += `</div>`;
-        Swal.fire({ title: `أرقام تواصل: ${item.name}`, html: phoneHtml, showConfirmButton: false, showCloseButton: true, customClass: { popup: 'rounded-3xl' } });
+
+        Swal.fire({
+            title: `أرقام تواصل: ${item.name}`,
+            html: phoneHtml,
+            showConfirmButton: false,
+            showCloseButton: true,
+            customClass: { popup: 'rounded-3xl' }
+        });
     }
 
+    // 5. Commission
     if (btn.classList.contains('btn-commission')) {
+        // ... (Existing commission logic logic)
         const item = allStaff.find(d => d.id == id);
         if (!item) return;
+
         const rules = item.commission_rules || {};
         let htmlContent = '<div class="space-y-3 text-right dir-rtl">';
+        
         if (Object.keys(rules).length === 0) {
             htmlContent += '<p class="text-gray-500 text-center py-4">لم يتم تحديد عمولة بعد.</p>';
         } else {
@@ -304,18 +277,37 @@ async function handleTableActions(e) {
                     const r = rules[tank.id];
                     htmlContent += `
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                            <h4 class="font-bold text-blue-600 text-sm mb-2 flex items-center gap-2"><i class="ph-fill ph-cylinder"></i>${tank.name}</h4>
+                            <h4 class="font-bold text-blue-600 text-sm mb-2 flex items-center gap-2">
+                                <i class="ph-fill ph-cylinder"></i>
+                                ${tank.name}
+                            </h4>
                             <div class="grid grid-cols-3 gap-2 text-center">
-                                <div class="bg-white p-2 rounded-lg border border-gray-100"><span class="text-[10px] text-gray-400 block">الهدف</span><span class="font-bold text-gray-800">${r.threshold}</span></div>
-                                <div class="bg-white p-2 rounded-lg border border-gray-100"><span class="text-[10px] text-gray-400 block">الأساسي</span><span class="font-bold text-green-600">${r.base}</span></div>
-                                <div class="bg-white p-2 rounded-lg border border-gray-100"><span class="text-[10px] text-gray-400 block">الإضافي</span><span class="font-bold text-amber-500">${r.bonus}</span></div>
+                                <div class="bg-white p-2 rounded-lg border border-gray-100">
+                                    <span class="text-[10px] text-gray-400 block">الهدف</span>
+                                    <span class="font-bold text-gray-800">${r.threshold}</span>
+                                </div>
+                                <div class="bg-white p-2 rounded-lg border border-gray-100">
+                                    <span class="text-[10px] text-gray-400 block">الأساسي</span>
+                                    <span class="font-bold text-green-600">${r.base}</span>
+                                </div>
+                                <div class="bg-white p-2 rounded-lg border border-gray-100">
+                                    <span class="text-[10px] text-gray-400 block">الإضافي</span>
+                                    <span class="font-bold text-amber-500">${r.bonus}</span>
+                                </div>
                             </div>
-                        </div>`;
+                        </div>
+                    `;
                 }
             });
         }
         htmlContent += '</div>';
-        Swal.fire({ title: `عمولة: ${item.name}`, html: htmlContent, confirmButtonText: 'إغلاق', customClass: { popup: 'rounded-2xl' } });
+
+        Swal.fire({
+            title: `عمولة: ${item.name}`,
+            html: htmlContent,
+            confirmButtonText: 'إغلاق',
+            customClass: { popup: 'rounded-2xl' }
+        });
     }
 }
 
@@ -323,13 +315,23 @@ function initThemeToggle() {
     const toggleBtn = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
-    if (localStorage.getItem('theme') === 'dark') { body.classList.add('dark-mode'); if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun'); }
+
+    if (localStorage.getItem('theme') === 'dark') {
+        body.classList.add('dark-mode');
+        if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+    }
+
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
-            if (isDark) { if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun'); localStorage.setItem('theme', 'dark'); } 
-            else { if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon'); localStorage.setItem('theme', 'light'); }
+            if (isDark) {
+                if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
+                localStorage.setItem('theme', 'light');
+            }
         });
     }
 }

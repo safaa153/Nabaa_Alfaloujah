@@ -1,6 +1,7 @@
 // accountent/js/areas/main.js
 import { AreasData } from './data.js';
 import { AreasUI } from './ui.js';
+import { CustomersModal } from './customers_modal.js';
 import { AuthService } from '../../../Settings/auth.js'; 
 
 let allAreas = [];
@@ -10,17 +11,10 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 function initApp() {
     setupEventListeners();
-    
-    // Initialize Data & Realtime
-    AreasData.init((data) => {
-        allAreas = data.areas;
-        driversList = data.drivers;
-        AreasUI.renderTable(allAreas);
-        loadHeaderProfile();
-    });
-
+    refreshData();
     loadHeaderProfile();
     initThemeToggle();
+    CustomersModal.init(); // Initialize Modal
 }
 
 async function loadHeaderProfile() {
@@ -28,6 +22,17 @@ async function loadHeaderProfile() {
     if (profile) {
         AreasUI.updateHeaderProfile(profile);
     }
+}
+
+function refreshData() {
+    Promise.all([
+        AreasData.fetchAreas(),
+        AreasData.fetchDrivers()
+    ]).then(([areas, drivers]) => {
+        allAreas = areas;
+        driversList = drivers;
+        AreasUI.renderTable(allAreas);
+    });
 }
 
 function setupEventListeners() {
@@ -39,40 +44,24 @@ function setupEventListeners() {
     document.getElementById('btn-cancel-modal').addEventListener('click', () => AreasUI.closeModal());
     document.getElementById('area-form').addEventListener('submit', handleFormSubmit);
 
-    // Search
     document.getElementById('search-area').addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase();
-        const filtered = allAreas.filter(a => 
-            a.name.toLowerCase().includes(val) ||
-            (a.driver_name && a.driver_name.toLowerCase().includes(val)) // Added driver search
-        );
+        const filtered = allAreas.filter(a => a.name.toLowerCase().includes(val));
         AreasUI.renderTable(filtered);
     });
 
-    // Table Actions
     document.getElementById('areas-table-body').addEventListener('click', handleTableActions);
     
-    // Export
     document.getElementById('btn-export').addEventListener('click', () => {
-        if (!allAreas || allAreas.length === 0) {
-            AreasUI.showError('تنبيه', 'لا توجد بيانات للتصدير');
-            return;
-        }
         const data = allAreas.map((a, i) => ({
-            '#': i+1, 
-            'المنطقة': a.name, 
-            'السائق': a.driver_name, 
-            'الزبائن': a.customer_count, 
-            'الحالة': (a.is_active !== false) ? 'فعال' : 'غير فعال',
-            'تاريخ الإنشاء': new Date(a.created_at).toLocaleDateString('ar-EG')
+            '#': i+1, 'المنطقة': a.name, 'السائق': a.driver_name, 'الزبائن': a.customer_count, 'الحالة': a.is_active ? 'فعال' : 'مغلق'
         }));
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "المناطق");
-        XLSX.writeFile(wb, `Areas_List_${new Date().toISOString().slice(0,10)}.xlsx`);
+        XLSX.writeFile(wb, "Areas.xlsx");
     });
 
-    // Logout
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
@@ -116,11 +105,8 @@ async function handleFormSubmit(e) {
             await AreasData.addArea(payload);
             AreasUI.showSuccess('تم الإضافة', 'تم إضافة المنطقة بنجاح');
         }
-        
         AreasUI.closeModal();
-        // Force Instant Refresh
-        AreasData.refresh();
-
+        refreshData();
     } catch (err) {
         AreasUI.showError('خطأ', err.message);
     }
@@ -140,14 +126,13 @@ async function handleTableActions(e) {
             confirmButtonText: 'حذف',
             cancelButtonText: 'إلغاء',
             confirmButtonColor: '#d33',
-            customClass: { popup: 'rounded-2xl' }
+            customClass: { popup: 'rounded-3xl' }
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
                     await AreasData.deleteArea(id);
                     AreasUI.showSuccess('تم الحذف', '');
-                    // Force Instant Refresh
-                    AreasData.refresh();
+                    refreshData();
                 } catch (err) {
                     AreasUI.showError('خطأ', err.message);
                 }
@@ -163,8 +148,12 @@ async function handleTableActions(e) {
         }
     }
     
+    // UPDATED: View Customers Button
     if (btn.classList.contains('btn-customers')) {
-        AreasUI.showSuccess('تنبيه', 'سيتم إتاحة عرض الزبائن في التحديث القادم');
+        const item = allAreas.find(a => a.id == id);
+        if (item) {
+            CustomersModal.open(id, item.name);
+        }
     }
 }
 

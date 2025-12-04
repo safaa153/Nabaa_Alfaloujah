@@ -24,15 +24,11 @@ export const TanksUI = {
         get status() { return document.getElementById('tank-status'); },
     },
 
-    // --- HEADER UPDATE ---
     updateHeaderProfile: function(profile) {
         if (!profile) return;
-
-        // Update Name and Role
         if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
         if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
 
-        // Update Avatar
         const container = this.headerAvatarContainer;
         const img = this.headerAvatarImg;
         if (!container || !img) return;
@@ -40,7 +36,6 @@ export const TanksUI = {
         if (profile.photo_url) {
             img.src = profile.photo_url;
             img.classList.remove('hidden');
-            // Hide the default letter span
             const letterSpan = container.querySelector('span');
             if(letterSpan) letterSpan.style.display = 'none';
         } else {
@@ -48,42 +43,23 @@ export const TanksUI = {
             const letterSpan = container.querySelector('span');
             if(letterSpan) {
                 letterSpan.style.display = 'block';
-                // Update letter if name is available
                 if (profile.name) letterSpan.innerText = profile.name.charAt(0);
             }
         }
     },
 
-    // --- POPUP NOTIFICATIONS ---
     showError: function(title, message) {
         if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: title,
-                text: message,
-                confirmButtonText: 'حسناً',
-                confirmButtonColor: '#ef476f',
-                customClass: { popup: 'rounded-2xl' }
-            });
-        } else {
-            alert(message);
-        }
+            Swal.fire({icon:'error', title, text:message, confirmButtonText:'حسناً', confirmButtonColor:'#ef476f', customClass:{popup:'rounded-2xl'}});
+        } else { alert(message); }
     },
 
     showSuccess: function(title, message) {
         if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: title,
-                text: message,
-                showConfirmButton: false,
-                timer: 1500,
-                customClass: { popup: 'rounded-2xl' }
-            });
+            Swal.fire({icon:'success', title, text:message, showConfirmButton:false, timer:1500, customClass:{popup:'rounded-2xl'}});
         }
     },
 
-    // --- RENDER LOGIC ---
     renderTable: function(tanks) {
         const container = this.gridContainer;
         if (!container) return;
@@ -98,7 +74,7 @@ export const TanksUI = {
         this.emptyState.classList.add('hidden');
 
         tanks.forEach(tank => {
-            const isActive = tank.is_active !== false; // Default true
+            const isActive = tank.is_active !== false;
             const statusClass = isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500';
             const statusText = isActive ? 'فعال' : 'غير فعال';
 
@@ -125,15 +101,13 @@ export const TanksUI = {
                         <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-users text-blue-500"></i> المشتركين</span>
                         <span class="font-bold text-gray-800">${tank.customer_count || 0}</span>
                     </div>
-
-                    <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
-                        <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-calendar text-orange-500"></i> مدة الدورة</span>
-                        <span class="font-bold text-gray-800">${tank.filling_days || '-'} <span class="text-[10px] text-gray-400">يوم</span></span>
-                    </div>
-
                     <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
                         <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-money text-green-500"></i> السعر</span>
                         <span class="font-bold text-gray-800">${parseInt(tank.price).toLocaleString()} <span class="text-[10px] text-gray-400">د.ع</span></span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-xl">
+                        <span class="text-gray-500 flex items-center gap-2"><i class="ph-duotone ph-calendar-blank text-purple-500"></i> دورة التعبئة</span>
+                        <span class="font-bold text-gray-800">${tank.filling_days || 30} <span class="text-[10px] text-gray-400">يوم</span></span>
                     </div>
                 </div>
 
@@ -159,10 +133,6 @@ export const TanksUI = {
             `;
             container.appendChild(card);
         });
-
-        // Add Event Listeners for buttons (Note: Main logic is handled via delegation in main.js, 
-        // but if specific listeners were needed here, they would go here. 
-        // Currently keeping it clean as per your main.js delegation structure).
     },
 
     openModal: function(isEdit = false) {

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محطة نبع الخيرات - إدارة الزبائن</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="../../Css/styles.css">
+
+    <style>
+        #main-sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #main-sidebar.collapsed-mode .sidebar-text,
+        #main-sidebar.collapsed-mode h1, #main-sidebar.collapsed-mode p,
+        #main-sidebar.collapsed-mode span { display: none; opacity: 0; }
+        #main-sidebar.collapsed-mode .nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
+        #main-sidebar.collapsed-mode .logo-container { width: 3rem; height: 3rem; margin-bottom: 1rem; }
+        #main-sidebar.collapsed-mode .logo-icon { font-size: 1.25rem; }
+    </style>
+</head>
+<body class="text-gray-800 bg-gray-50 overflow-hidden font-sans">
+
+    <div class="flex h-screen">
+        <!-- SIDEBAR -->
+        <aside id="main-sidebar" class="sidebar-glass w-64 flex-shrink-0 flex flex-col p-4 h-full overflow-y-auto z-20 border-l border-gray-100 bg-white/80 backdrop-blur-md">
+            <div class="mb-8 text-center whitespace-nowrap">
+                 <div class="logo-container w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3 transition-all duration-300">
+                    <i class="ph ph-drop text-3xl text-white logo-icon"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الخيرات</h1>
+                <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
+            </div>
+            <nav id="sidebar-nav"></nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-y-auto relative">
+            
+            <header class="p-6 bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    
+                    <!-- Right: Title & Toggle -->
+                    <div class="flex items-center gap-4">
+                        <button id="sidebar-toggle" class="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors">
+                            <i class="ph ph-list text-2xl"></i>
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="ph-duotone ph-users text-cyan-600"></i>
+                            الزبائن
+                        </h2>
+                    </div>
+                    
+                    <!-- Center: Search & Filters -->
+                    <div class="flex flex-wrap items-center gap-2 flex-1 justify-center px-4">
+                        <!-- Text Search -->
+                        <div class="relative w-full md:w-48">
+                             <i class="ph ph-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                             <input type="text" id="search-text" placeholder="اسم الزبون أو رقم الخزان..." class="pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-cyan-500 text-sm w-full transition-colors">
+                        </div>
+
+                        <!-- Filter: Tank Type -->
+                        <select id="filter-tank-type" class="bg-white border border-gray-200 text-gray-700 py-2.5 px-3 rounded-xl focus:outline-none focus:border-cyan-500 text-xs w-32 cursor-pointer">
+                            <option value="">نوع الخزان (الكل)</option>
+                        </select>
+
+                        <!-- Filter: Area -->
+                        <select id="filter-area" class="bg-white border border-gray-200 text-gray-700 py-2.5 px-3 rounded-xl focus:outline-none focus:border-cyan-500 text-xs w-32 cursor-pointer">
+                            <option value="">المنطقة (الكل)</option>
+                        </select>
+
+                        <!-- NEW: Filter: Driver -->
+                        <select id="filter-driver" class="bg-white border border-gray-200 text-gray-700 py-2.5 px-3 rounded-xl focus:outline-none focus:border-cyan-500 text-xs w-32 cursor-pointer">
+                            <option value="">السائق (الكل)</option>
+                        </select>
+
+                        <button id="btn-add-customer" class="btn-primary py-2.5 px-4 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-cyan-500/30 hover:-translate-y-1 transition-all text-xs">
+                            <i class="ph ph-plus text-lg"></i>
+                            <span>جديد</span>
+                        </button>
+                    </div>
+
+                    <!-- Left: Profile & Actions -->
+                    <div class="flex items-center gap-4">
+                        <button id="theme-toggle" class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                            <i class="ph ph-moon text-xl" id="theme-icon"></i>
+                        </button>
+
+                        <div class="flex items-center gap-3 pl-4 border-l border-gray-100">
+                            <div class="text-right hidden md:block">
+                                <h3 id="header-user-name" class="text-sm font-bold text-gray-800 leading-tight">المسؤول</h3>
+                                <p id="header-user-role" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
+                            </div>
+                            <div class="relative group cursor-pointer">
+                                <div id="header-user-avatar" class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20 overflow-hidden">
+                                    <span>م</span>
+                                    <img id="header-user-img" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="btn-logout" class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white hover:bg-red-600 shadow-md transition-all">
+                            <i class="ph-bold ph-sign-out text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-6">
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right modern-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>رقم الخزان</th>
+                                    <th>اسم الزبون</th>
+                                    <th>نوع الخزان</th>
+                                    <th>المنطقة</th>
+                                    <th>السائق</th>
+                                    <th class="text-center">الهاتف</th>
+                                    <th class="text-center">الموقع</th>
+                                    <th class="text-center">آخر تعبئة</th>
+                                    <th class="text-center">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customers-table-body" class="text-sm font-medium text-gray-700"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="loading-state" class="hidden py-12 flex flex-col items-center justify-center text-gray-400">
+                        <div class="w-10 h-10 border-4 border-cyan-100 border-t-cyan-600 rounded-full animate-spin mb-4"></div>
+                        <p>جاري تحميل البيانات...</p>
+                    </div>
+                    <div id="empty-state" class="hidden py-12 flex flex-col items-center justify-center text-gray-400">
+                        <i class="ph ph-users text-4xl mb-2 text-gray-300"></i>
+                        <p>لا يوجد زبائن مطابقين</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="customer-modal" class="fixed inset-0 z-50 hidden bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]" id="customer-modal-content">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                <h3 class="text-lg font-bold text-gray-800" id="modal-title">إضافة زبون جديد</h3>
+                <button id="btn-close-modal" class="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-red-500 flex items-center justify-center">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            
+            <form id="customer-form" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="customer-id">
+                <input type="hidden" id="existing-doc1">
+                <input type="hidden" id="existing-doc2">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">رقم الخزان <span class="text-red-500">*</span></label>
+                        <input type="text" id="cust-tank-no" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none font-mono text-left" placeholder="A-123" required>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">اسم الزبون <span class="text-red-500">*</span></label>
+                        <input type="text" id="cust-name" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">نوع الخزان <span class="text-red-500">*</span></label>
+                        <select id="cust-tank-type" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none cursor-pointer" required></select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">رقم الهاتف 1 <span class="text-red-500">*</span></label>
+                        <input type="tel" id="cust-phone1" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none font-mono text-left" placeholder="07XXXXXXXXX" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">رقم الهاتف 2 (اختياري)</label>
+                        <input type="tel" id="cust-phone2" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none font-mono text-left">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">رقم الهاتف 3 (اختياري)</label>
+                        <input type="tel" id="cust-phone3" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none font-mono text-left">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">المنطقة <span class="text-red-500">*</span></label>
+                        <select id="cust-area" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none cursor-pointer" required></select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">السائق المسؤول</label>
+                        <select id="cust-driver" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none cursor-pointer"></select>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500">العنوان التفصيلي</label>
+                    <input type="text" id="cust-address" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">خط العرض (Latitude)</label>
+                        <input type="number" step="any" id="cust-lat" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-500">خط الطول (Longitude)</label>
+                        <input type="number" step="any" id="cust-lng" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none font-mono">
+                    </div>
+                </div>
+
+                <hr class="border-gray-100">
+                
+                <div class="space-y-2">
+                    <h4 class="text-sm font-bold text-gray-700">المستندات (صور)</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">مستند 1</label>
+                            <input type="file" id="cust-doc1" accept="image/*" class="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:bg-cyan-50 file:text-cyan-700">
+                            <a id="link-doc1" href="#" target="_blank" class="text-xs text-blue-500 underline hidden mt-1 block">عرض الملف الحالي</a>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-1">مستند 2</label>
+                            <input type="file" id="cust-doc2" accept="image/*" class="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:bg-cyan-50 file:text-cyan-700">
+                            <a id="link-doc2" href="#" target="_blank" class="text-xs text-blue-500 underline hidden mt-1 block">عرض الملف الحالي</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button type="submit" class="btn-primary w-full py-3 rounded-xl font-bold shadow-lg shadow-cyan-500/30">حفظ</button>
+                    <button type="button" id="btn-cancel-modal" class="w-1/3 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { Sidebar } from '../../Settings/sidebar.js';
+        document.addEventListener('DOMContentLoaded', () => { 
+            Sidebar.render('customers'); 
+            Sidebar.initToggle(); 
+        });
+    </script>
+    <script type="module" src="../js/customers/main.js"></script>
+</body>
+</html>

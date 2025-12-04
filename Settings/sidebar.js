@@ -6,7 +6,7 @@ export const Sidebar = {
         { id: 'drivers',  label: 'السائقين', icon: 'ph-truck', link: 'drivers.html' },
         { id: 'cars',     label: 'السيارات', icon: 'ph-car', link: 'cars.html' },
         { id: 'regions',  label: 'المناطق',   icon: 'ph-map-pin', link: 'areas.html' },
-        { id: 'customers',label: 'الزبائن',   icon: 'ph-users', link: '#' },
+        { id: 'customers',label: 'الزبائن',   icon: 'ph-users', link: 'customers.html' },
         { id: 'late',     label: 'الزبائن المتأخرين', icon: 'ph-clock-counter-clockwise', link: '#' },
         { id: 'orders',   label: 'الطلبات',   icon: 'ph-clipboard-text', link: '#' },
         { id: 'debts',    label: 'الديون',    icon: 'ph-currency-dollar', link: '#' },

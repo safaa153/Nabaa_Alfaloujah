@@ -44,7 +44,7 @@
                  <div class="logo-container w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3 transition-all duration-300">
                     <i class="ph ph-drop text-3xl text-white logo-icon"></i>
                 </div>
-                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الفلوجة</h1>
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الخيرات</h1>
                 <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
             </div>
             <nav id="sidebar-nav"></nav>
@@ -65,7 +65,7 @@
                 </div>
 
                 <div class="flex items-center gap-6">
-                    <!-- NEW: Dark Mode Toggle -->
+                    <!-- Dark Mode Toggle -->
                     <button id="theme-toggle" class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors">
                         <i class="ph ph-moon text-xl" id="theme-icon"></i>
                     </button>
@@ -91,8 +91,8 @@
             </header>
 
             <div class="p-8 max-w-7xl mx-auto space-y-8">
-                <!-- Quick Stats Grid -->
-                <div id="quick-stats-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                <!-- Quick Stats Grid (UPDATED: xl:grid-cols-3 for 6 items) -->
+                <div id="quick-stats-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                     <div class="col-span-full py-12 flex justify-center">
                         <i class="ph ph-spinner animate-spin text-3xl text-blue-300"></i>
                     </div>
@@ -100,13 +100,12 @@
 
                 <!-- Main Grid -->
                 <div class="grid grid-cols-1 gap-8">
-                    <!-- Tank Distribution (Reverted to List Container) -->
+                    <!-- Tank Distribution -->
                     <div class="space-y-4">
                         <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
                             <i class="ph-fill ph-chart-pie-slice text-purple-500"></i>
                             توزيع المشتركين على الخزانات
                         </h3>
-                        <!-- Reverted to single block container with grid inside for list items -->
                         <div id="tanks-container" class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
                     </div>
                 </div>

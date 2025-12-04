@@ -1,6 +1,7 @@
 // accountent/js/tanks/main.js
 import { TanksData } from './data.js';
 import { TanksUI } from './ui.js';
+import { CustomersModal } from './customers_modal.js';
 import { AuthService } from '../../../Settings/auth.js'; 
 
 let currentTanks = [];
@@ -11,10 +12,9 @@ document.addEventListener('DOMContentLoaded', initApp);
 function initApp() {
     setupEventListeners();
     refreshTableData();
-    // Load Header Profile
     loadHeaderProfile();
-    // NEW: Initialize Dark Mode Toggle
     initThemeToggle();
+    CustomersModal.init(); // Initialize Modal Listeners
 }
 
 async function loadHeaderProfile() {
@@ -42,7 +42,6 @@ function applyFilterAndRender() {
 }
 
 function setupEventListeners() {
-    // Buttons & Forms
     const btnAdd = document.getElementById('btn-add-tank');
     if (btnAdd) btnAdd.addEventListener('click', () => TanksUI.openModal(false));
     
@@ -55,7 +54,6 @@ function setupEventListeners() {
     const form = document.getElementById('tank-form');
     if (form) form.addEventListener('submit', handleFormSubmit);
 
-    // Sidebar Toggle
     const toggleBtn = document.getElementById('sidebar-toggle');
     const sidebar = document.getElementById('main-sidebar');
     if (toggleBtn && sidebar) {
@@ -66,7 +64,6 @@ function setupEventListeners() {
         });
     }
 
-    // Filter
     const filter = document.getElementById('filter-status');
     if (filter) {
         filter.addEventListener('change', (e) => {
@@ -75,7 +72,6 @@ function setupEventListeners() {
         });
     }
 
-    // Logout
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
         btnLogout.addEventListener('click', (e) => {
@@ -98,7 +94,6 @@ function setupEventListeners() {
         });
     }
 
-    // Action Delegation (Edit / Delete / Customers)
     const grid = document.getElementById('tanks-grid-container');
     if (grid) {
         grid.addEventListener('click', handleGridActions);
@@ -138,7 +133,6 @@ function handleGridActions(e) {
     if (!btn) return;
     const id = btn.dataset.id;
 
-    // 1. Delete
     if (btn.classList.contains('btn-delete')) {
         Swal.fire({
             title: 'هل أنت متأكد؟',
@@ -162,7 +156,6 @@ function handleGridActions(e) {
         });
     }
 
-    // 2. Edit
     if (btn.classList.contains('btn-edit')) {
         const tank = currentTanks.find(t => t.id == id);
         if (tank) {
@@ -171,39 +164,29 @@ function handleGridActions(e) {
         }
     }
 
-    // 3. View Customers (NEW)
+    // View Customers (Triggers Modal)
     if (btn.classList.contains('btn-customers')) {
-        Swal.fire({
-            icon: 'info',
-            title: 'تنبيه',
-            text: 'سيتم إتاحة عرض المشتركين وتحديد مواقعهم في التحديث القادم',
-            confirmButtonText: 'حسناً',
-            confirmButtonColor: '#3b82f6', 
-            customClass: { popup: 'rounded-2xl' }
-        });
+        const tank = currentTanks.find(t => t.id == id);
+        if (tank) {
+            CustomersModal.open(id, tank.name);
+        }
     }
 }
 
-// Theme Toggle Logic
 function initThemeToggle() {
     const toggleBtn = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
 
-    // 1. Check local storage
     if (localStorage.getItem('theme') === 'dark') {
         body.classList.add('dark-mode');
         if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
     }
 
-    // 2. Toggle Event
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
-            
             const isDark = body.classList.contains('dark-mode');
-            
-            // Switch Icon
             if (isDark) {
                 if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
                 localStorage.setItem('theme', 'dark');

@@ -10,64 +10,6 @@ const BUCKET_PROFILES = 'user-profiles';
 
 export const DriversData = { 
     
-    subscription: null,
-    refreshTimer: null,
-    onDataChange: null, // NEW: Store callback for manual refresh
-
-    init: function(onDataChangedCallback) {
-        if (!supabase) return;
-        
-        // Save the callback
-        this.onDataChange = onDataChangedCallback;
-
-        // Initial Fetch
-        this.fetchAllData().then(data => onDataChangedCallback(data));
-        
-        // Realtime
-        this.subscribeToChanges(onDataChangedCallback);
-    },
-
-    // NEW: Manual Refresh Function
-    refresh: async function() {
-        if (this.onDataChange) {
-            const data = await this.fetchAllData();
-            this.onDataChange(data);
-        }
-    },
-
-    fetchAllData: async function() {
-        try {
-            const [drivers, tanks, cars] = await Promise.all([
-                this.fetchDrivers(),
-                this.fetchTankTypes(),
-                this.fetchCars()
-            ]);
-            return { drivers, tanks, cars };
-        } catch (error) {
-            console.error("Fetch All Data Error:", error);
-            return { drivers: [], tanks: [], cars: [] };
-        }
-    },
-
-    debouncedRefresh: function(callback) {
-        if (this.refreshTimer) clearTimeout(this.refreshTimer);
-        this.refreshTimer = setTimeout(async () => {
-            const data = await this.fetchAllData();
-            callback(data);
-        }, 500); 
-    },
-
-    subscribeToChanges: function(callback) {
-        if (this.subscription) supabase.removeChannel(this.subscription);
-        
-        this.subscription = supabase
-            .channel('drivers-page-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: DRIVERS_TABLE }, () => this.debouncedRefresh(callback))
-            .on('postgres_changes', { event: '*', schema: 'public', table: CARS_TABLE }, () => this.debouncedRefresh(callback))
-            .on('postgres_changes', { event: '*', schema: 'public', table: TANKS_TABLE }, () => this.debouncedRefresh(callback))
-            .subscribe();
-    },
-
     fetchDrivers: async function() {
         if (!supabase) return [];
         try {
@@ -78,20 +20,23 @@ export const DriversData = {
 
             if (driversError) throw driversError;
 
-            // Scalable Area Counting
-            const driversWithCounts = await Promise.all(drivers.map(async (d) => {
-                const { count } = await supabase
-                    .from(AREAS_TABLE)
-                    .select('*', { count: 'exact', head: true })
-                    .eq('driver_id', d.id);
-                
-                return {
-                    ...d,
-                    area_count: count || 0
-                };
-            }));
+            const { data: areas, error: areasError } = await supabase
+                .from(AREAS_TABLE)
+                .select('driver_id');
 
-            return driversWithCounts;
+            const areaCounts = {};
+            if (!areasError && areas) {
+                areas.forEach(a => {
+                    if (a.driver_id) {
+                        areaCounts[a.driver_id] = (areaCounts[a.driver_id] || 0) + 1;
+                    }
+                });
+            }
+
+            return drivers.map(d => ({
+                ...d,
+                area_count: areaCounts[d.id] || 0
+            }));
 
         } catch (error) {
             console.error("Fetch Drivers Error:", error);
@@ -99,54 +44,39 @@ export const DriversData = {
         }
     },
 
+    // NEW: Get Customers for a specific driver (with Area Name)
+    getCustomersByDriverId: async function(driverId) {
+        const { data, error } = await supabase
+            .from('customers')
+            .select(`
+                id, 
+                name, 
+                phone, 
+                address,
+                areas ( id, name )
+            `)
+            .eq('driver_id', driverId);
+        
+        if (error) throw error;
+        return data || [];
+    },
+
     fetchUserProfile: async function() {
         if (!supabase) return null;
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            let profile = null;
-
-            if (user) {
-                const { data } = await supabase
-                    .from(DRIVERS_TABLE)
-                    .select('name, role, photo_url') 
-                    .eq('id', user.id)
-                    .maybeSingle();
-                if (data) profile = data;
-            }
-
-            if (!profile) {
-                const { data } = await supabase
-                    .from(DRIVERS_TABLE)
-                    .select('name, role, photo_url')
-                    .eq('role', 'employee') 
-                    .limit(1)
-                    .maybeSingle();
-                profile = data;
-            }
-
-            if (!profile) return null;
-
-            return {
-                name: profile.name,
-                job_title: this.translateRole(profile.role),
-                photo_url: profile.photo_url || null
-            };
-
+            const { data, error } = await supabase
+                .from(DRIVERS_TABLE)
+                .select('name, job_title, photo_url')
+                .eq('job_title', 'محاسب')
+                .limit(1)
+                .maybeSingle();
+            
+            if (error) return null;
+            return data;
         } catch (error) {
             console.error("Fetch Profile Error:", error);
             return null;
         }
-    },
-
-    translateRole: function(role) {
-        if (!role) return 'المسؤول';
-        const r = role.toLowerCase().trim();
-        if (r === 'employee') return 'محاسب / إداري';
-        if (r === 'driver') return 'سائق';
-        if (r === 'assistant') return 'مساعد';
-        if (r === 'manager') return 'المدير';
-        if (r === 'admin') return 'المسؤول';
-        return role;
     },
 
     uploadProfileImage: async function(file) {
@@ -157,12 +87,13 @@ export const DriversData = {
 
             const { data, error } = await supabase.storage
                 .from(BUCKET_PROFILES)
-                .upload(fileName, file, { cacheControl: '3600', upsert: false });
+                .upload(fileName, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
 
             if (error) {
-                if (error.message.includes('row-level security')) {
-                    throw new Error("يرجى تفعيل Policies في الـ Storage");
-                }
+                console.error("Profile Upload Error:", error);
                 throw error;
             }
 
@@ -192,6 +123,16 @@ export const DriversData = {
         }
     },
 
+    getAreasByDriverId: async function(driverId) {
+        const { data, error } = await supabase
+            .from(AREAS_TABLE)
+            .select('id, name')
+            .eq('driver_id', driverId);
+        
+        if (error) throw error;
+        return data || [];
+    },
+
     fetchTankTypes: async function() {
         if (!supabase) return [];
         try {
@@ -199,6 +140,7 @@ export const DriversData = {
                 .from(TANKS_TABLE)
                 .select('id, name')
                 .eq('is_active', true);
+
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -221,5 +163,9 @@ export const DriversData = {
     deleteDriver: async function(id) {
         const { error } = await supabase.from(DRIVERS_TABLE).delete().eq('id', id);
         if (error) throw error;
+    },
+
+    getDriverById: function(list, id) {
+        return list.find(d => d.id == id);
     }
 };

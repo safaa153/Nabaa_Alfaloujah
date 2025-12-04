@@ -39,12 +39,14 @@ export const OverviewUI = {
             return;
         }
 
+        // Added new gradient for the 6th card (Customers)
         const gradients = [
-            { bg: 'bg-gradient-to-br from-cyan-400 to-sky-600', text: 'text-white', shadow: 'shadow-cyan-500/30' },
-            { bg: 'bg-gradient-to-br from-emerald-400 to-teal-600', text: 'text-white', shadow: 'shadow-emerald-500/30' },
-            { bg: 'bg-gradient-to-br from-blue-500 to-indigo-600', text: 'text-white', shadow: 'shadow-blue-500/30' },
-            { bg: 'bg-gradient-to-br from-violet-500 to-purple-600', text: 'text-white', shadow: 'shadow-violet-500/30' },
-            { bg: 'bg-gradient-to-br from-amber-400 to-orange-600', text: 'text-white', shadow: 'shadow-amber-500/30' }
+            { bg: 'bg-gradient-to-br from-rose-500 to-pink-600', text: 'text-white', shadow: 'shadow-rose-500/30' },       // Customers (NEW)
+            { bg: 'bg-gradient-to-br from-cyan-400 to-sky-600', text: 'text-white', shadow: 'shadow-cyan-500/30' },         // Areas
+            { bg: 'bg-gradient-to-br from-emerald-400 to-teal-600', text: 'text-white', shadow: 'shadow-emerald-500/30' },   // Tanks
+            { bg: 'bg-gradient-to-br from-blue-500 to-indigo-600', text: 'text-white', shadow: 'shadow-blue-500/30' },       // Drivers
+            { bg: 'bg-gradient-to-br from-violet-500 to-purple-600', text: 'text-white', shadow: 'shadow-violet-500/30' },   // Assistants
+            { bg: 'bg-gradient-to-br from-amber-400 to-orange-600', text: 'text-white', shadow: 'shadow-amber-500/30' }      // Employees
         ];
 
         container.innerHTML = statsData.map((item, index) => {
