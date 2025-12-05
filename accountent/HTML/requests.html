@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محطة نبع الخيرات - إدارة الطلبات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="../../Css/styles.css">
+
+    <style>
+        #main-sidebar { transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #main-sidebar.collapsed-mode .sidebar-text,
+        #main-sidebar.collapsed-mode h1, #main-sidebar.collapsed-mode p,
+        #main-sidebar.collapsed-mode span { display: none; opacity: 0; }
+        #main-sidebar.collapsed-mode .nav-link { justify-content: center; padding-left: 0; padding-right: 0; }
+        #main-sidebar.collapsed-mode .logo-container { width: 3rem; height: 3rem; margin-bottom: 1rem; }
+        #main-sidebar.collapsed-mode .logo-icon { font-size: 1.25rem; }
+        #dropdown-portal { position: relative; z-index: 9999; }
+        
+        .filter-btn { 
+            padding: 0.5rem 1rem; 
+            border-radius: 0.75rem; 
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            color: #6b7280; 
+            background-color: #f9fafb; 
+            border: 1px solid #e5e7eb; 
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .filter-btn:hover { border-color: #0891b2; color: #0891b2; background-color: #fff; }
+        .filter-btn.active { background-color: #0891b2; color: white; border-color: #0891b2; }
+
+        /* Modern Tabs Styling */
+        .tab-container {
+            background-color: #f3f4f6; /* gray-100 */
+            padding: 0.5rem;
+            border-radius: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn { 
+            flex: 1;
+            padding: 1rem; /* Bigger touch area */
+            border-radius: 0.75rem;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 800;
+            color: #6b7280; /* gray-500 */
+            background-color: transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background-color: rgba(255, 255, 255, 0.6);
+            color: #374151;
+        }
+
+        .tab-btn.active { 
+            background-color: #ffffff;
+            color: #0891b2; /* cyan-600 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border-color: #e5e7eb;
+            transform: translateY(-1px);
+        }
+        
+        .tab-btn i { font-size: 1.25rem; }
+
+        /* Suggestions List Styling */
+        #suggestions-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .suggestion-item:hover {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="text-gray-800 bg-gray-50 overflow-hidden font-sans">
+
+    <div class="flex h-screen">
+        <!-- SIDEBAR -->
+        <aside id="main-sidebar" class="sidebar-glass w-64 flex-shrink-0 flex flex-col p-4 h-full overflow-y-auto z-20 border-l border-gray-100 bg-white/80 backdrop-blur-md">
+            <div class="mb-8 text-center whitespace-nowrap">
+                 <div class="logo-container w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3 transition-all duration-300">
+                    <i class="ph ph-drop text-3xl text-white logo-icon"></i>
+                </div>
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الفلوجة</h1>
+                <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
+            </div>
+            <nav id="sidebar-nav"></nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-y-auto relative flex flex-col">
+            
+            <header class="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 shadow-sm px-6 pt-4 pb-0">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+                    <div class="flex items-center gap-4">
+                        <button id="sidebar-toggle" class="p-2 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition-colors">
+                            <i class="ph ph-list text-2xl"></i>
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <i class="ph-duotone ph-clipboard-text text-cyan-600"></i>
+                            الطلبات
+                        </h2>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button id="theme-toggle" class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                            <i class="ph ph-moon text-xl" id="theme-icon"></i>
+                        </button>
+                        <div class="flex items-center gap-3 pl-4 border-l border-gray-100">
+                            <div class="text-right hidden md:block">
+                                <h3 id="header-user-name" class="text-sm font-bold text-gray-800 leading-tight">المسؤول</h3>
+                                <p id="header-user-role" class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">ACCOUNTANT</p>
+                            </div>
+                            <div class="relative group cursor-pointer">
+                                <div id="header-user-avatar" class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20 overflow-hidden">
+                                    <span>م</span>
+                                    <img id="header-user-img" src="" alt="Profile" class="w-full h-full object-cover hidden">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- LOGOUT BUTTON MODIFIED HERE -->
+                        <button id="btn-logout" class="w-10 h-10 bg-red-500 text-white rounded-xl flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/30">
+                            <i class="ph-bold ph-sign-out text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MODERN TABS CONTAINER -->
+                <div class="tab-container mt-4 mb-6 mx-0">
+                    <button class="tab-btn active" data-tab="driver" data-status="pending">
+                        <i class="ph-bold ph-truck"></i> 
+                        <span>السائقين (معلقة)</span>
+                    </button>
+                    <button class="tab-btn" data-tab="accountant" data-status="delivered">
+                        <i class="ph-bold ph-check-circle"></i> 
+                        <span>المحاسب (واصلة)</span>
+                    </button>
+                    <button class="tab-btn" data-tab="finished" data-status="finished">
+                        <i class="ph-bold ph-archive"></i> 
+                        <span>المنتهية</span>
+                    </button>
+                </div>
+
+            </header>
+
+            <div class="px-6 py-4 space-y-4">
+                <!-- Top Actions: New Buttons -->
+                <div class="flex flex-wrap gap-2">
+                    <button id="btn-add-request" class="btn-primary py-2.5 px-4 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-cyan-500/30 text-xs hover:-translate-y-1 transition-transform">
+                        <i class="ph ph-plus text-lg"></i>
+                        <span>إضافة طلب تعبئة</span>
+                    </button>
+                    
+                    <button id="btn-direct-filling" class="py-2.5 px-4 rounded-xl flex items-center gap-2 font-bold text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/30 text-xs hover:-translate-y-1 transition-transform">
+                        <i class="ph ph-check-circle text-lg"></i>
+                        <span>تعبئة مباشرة (واصل)</span>
+                    </button>
+
+                    <button id="btn-direct-withdraw" class="py-2.5 px-4 rounded-xl flex items-center gap-2 font-bold text-white bg-orange-500 hover:bg-orange-600 shadow-lg shadow-orange-500/30 text-xs hover:-translate-y-1 transition-transform">
+                        <i class="ph ph-arrow-u-up-left text-lg"></i>
+                        <span>سحب مباشر</span>
+                    </button>
+
+                    <button id="btn-external-filling" class="py-2.5 px-4 rounded-xl flex items-center gap-2 font-bold text-white bg-purple-500 hover:bg-purple-600 shadow-lg shadow-purple-500/30 text-xs hover:-translate-y-1 transition-transform">
+                        <i class="ph ph-storefront text-lg"></i>
+                        <span>بيع خارجي</span>
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="flex flex-col xl:flex-row items-start xl:items-center gap-4 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+                    <div class="relative w-full xl:w-48">
+                         <i class="ph ph-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                         <input type="text" id="search-text" placeholder="بحث بالاسم أو الخزان..." class="pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-cyan-500 text-sm w-full transition-colors">
+                    </div>
+
+                    <!-- New Filters: Type, Area & Driver -->
+                     <select id="filter-type" class="bg-gray-50 border border-gray-200 text-gray-600 py-2.5 px-3 rounded-xl focus:outline-none focus:border-cyan-500 text-xs w-32 cursor-pointer">
+                        <option value="">النوع (الكل)</option>
+                        <option value="new_filling">تعبئة جديدة</option>
+                        <option value="change_water">تبديل مياه</option>
+                        <option value="withdraw_tank">سحب خزان</option>
+                        <!-- External Sale Removed -->
+                        <option value="set_location">تحديد موقع</option>
+                    </select>
+
+                    <select id="filter-area" class="bg-gray-50 border border-gray-200 text-gray-600 py-2.5 px-3 rounded-xl focus:outline-none focus:border-cyan-500 text-xs w-32 cursor-pointer">
+                        <option value="">المنطقة (الكل)</option>
+                    </select>
+                    <select id="filter-driver" class="bg-gray-50 border border-gray-200 text-gray-600 py-2.5 px-3 rounded-xl focus:outline-none focus:border-cyan-500 text-xs w-32 cursor-pointer">
+                        <option value="">السائق (الكل)</option>
+                    </select>
+
+                    <div class="flex flex-wrap items-center gap-2" id="date-filters-container">
+                        <button class="filter-btn active" data-filter="all">الكل</button>
+                        <button class="filter-btn" data-filter="today">اليوم</button>
+                        <button class="filter-btn" data-filter="yesterday">أمس</button>
+                        <button class="filter-btn" data-filter="this_month">هذا الشهر</button>
+                        <button class="filter-btn" data-filter="custom">مخصص</button>
+                    </div>
+
+                    <div id="custom-date-range" class="hidden flex items-center gap-2 animate-fade-in">
+                        <input type="date" id="date-from" class="py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-cyan-500">
+                        <span class="text-gray-400">-</span>
+                        <input type="date" id="date-to" class="py-2 px-3 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-cyan-500">
+                    </div>
+
+                    <div class="flex-1"></div>
+
+                    <div class="flex items-center gap-2 w-full xl:w-auto justify-end">
+                        <span class="text-xs text-gray-400 font-bold ml-2" id="results-count">0 طلب</span>
+                        <button id="btn-export-excel" class="py-2.5 px-4 rounded-xl flex items-center gap-2 font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all text-xs border border-emerald-100">
+                            <i class="ph ph-file-xls text-lg"></i>
+                            <span>Excel</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 pb-6 flex-1 overflow-hidden">
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 h-full flex flex-col w-full">
+                    <div class="overflow-x-auto flex-1 custom-scrollbar w-full">
+                        <table class="w-full text-right modern-table sticky top-0">
+                            <thead class="sticky top-0 bg-white z-10 text-xs text-gray-500">
+                                <tr>
+                                    <th class="w-10">#</th>
+                                    <th class="w-24 text-center">رقم الخزان</th>
+                                    <th class="w-24 text-center">السعة</th> 
+                                    <th>اسم الزبون</th>
+                                    <th class="w-32">المنطقة</th>
+                                    <th>العنوان</th>
+                                    <th class="w-32">الهاتف</th>
+                                    
+                                    <th class="text-center">النوع / السعر</th>
+                                    <th class="text-center w-20">الحالة</th>
+                                    <th class="w-48">السائق</th>
+                                    <th class="text-center w-40">التاريخ والوقت</th>
+                                    <th class="text-center w-20">الموقع</th>
+                                    <th class="text-center w-32">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requests-table-body" class="text-sm font-medium text-gray-700"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="loading-state" class="hidden py-12 flex flex-col items-center justify-center text-gray-400">
+                        <div class="w-10 h-10 border-4 border-cyan-100 border-t-cyan-600 rounded-full animate-spin mb-4"></div>
+                        <p>جاري تحميل البيانات...</p>
+                    </div>
+                    <div id="empty-state" class="hidden py-12 flex flex-col items-center justify-center text-gray-400">
+                        <i class="ph ph-clipboard-text text-4xl mb-2 text-gray-300"></i>
+                        <p>لا توجد طلبات مطابقة</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="request-modal" class="fixed inset-0 z-50 hidden bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]" id="request-modal-content">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                <h3 class="text-lg font-bold text-gray-800" id="modal-title">إضافة طلب جديد</h3>
+                <button id="btn-close-modal" class="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-red-500 flex items-center justify-center">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <form id="request-form" class="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="req-id">
+                
+                <!-- Customer Search Section -->
+                <div class="space-y-1 relative">
+                    <label class="text-xs font-bold text-gray-500">الزبون <span class="text-red-500">*</span></label>
+                    <input type="hidden" id="req-customer-id">
+                    <div class="relative">
+                         <input type="text" id="req-customer-search" placeholder="ابحث برقم الخزان أو الاسم..." autocomplete="off"
+                            class="w-full p-3 pl-10 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none">
+                         <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <!-- Suggestions Dropdown -->
+                    <div id="customer-suggestions" class="hidden absolute w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50 mt-1 max-h-48 overflow-y-auto custom-scrollbar">
+                        <ul id="suggestions-list" class="divide-y divide-gray-100"></ul>
+                    </div>
+                    <!-- Selected Customer Display -->
+                    <div id="selected-customer-display" class="hidden mt-2 p-2 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
+                        <span class="text-xs font-bold text-blue-800" id="selected-customer-name"></span>
+                        <button type="button" id="btn-clear-customer" class="text-blue-500 hover:text-red-500"><i class="ph-bold ph-x"></i></button>
+                    </div>
+                </div>
+
+                <div class="space-y-1 hidden">
+                    <label class="text-xs font-bold text-gray-500">نوع الطلب <span class="text-red-500">*</span></label>
+                    <select id="req-type" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none cursor-pointer">
+                        <option value="new_filling" selected>طلب تعبئة جديد</option>
+                        <option value="change_water">تبديل مياه (مجاني)</option>
+                        <option value="withdraw_tank">سحب خزان</option>
+                        <option value="set_location">تحديد موقع</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500">السائق المسؤول <span class="text-red-500">*</span></label>
+                    <select id="req-driver" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none cursor-pointer" required></select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-gray-500">ملاحظات</label>
+                    <textarea id="req-notes" rows="3" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-cyan-500 outline-none resize-none"></textarea>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="submit" class="btn-primary w-full py-3 rounded-xl font-bold shadow-lg shadow-cyan-500/30">حفظ الطلب</button>
+                    <button type="button" id="btn-cancel-modal" class="w-1/3 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="dropdown-portal"></div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { Sidebar } from '../../Settings/sidebar.js';
+        document.addEventListener('DOMContentLoaded', () => { 
+            Sidebar.render('orders'); 
+            Sidebar.initToggle(); 
+        });
+    </script>
+    <script type="module" src="../js/requests/main.js"></script>
+</body>
+</html>
