@@ -17,7 +17,7 @@ function initApp() {
     setupRealtimeSubscription();
     loadHeaderProfile();
     initThemeToggle();
-    CustomersModal.init(); // Initialize the Modal
+    CustomersModal.init();
 }
 
 async function loadHeaderProfile() {
@@ -34,7 +34,7 @@ function setupRealtimeSubscription() {
     supabase.channel('drivers-page-realtime')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => {
             refreshData();
-            loadHeaderProfile(); // Refresh header if profile changes
+            loadHeaderProfile();
         })
         .subscribe();
 }
@@ -93,6 +93,24 @@ function setupEventListeners() {
     });
 
     document.getElementById('drivers-table-body').addEventListener('click', handleTableActions);
+
+    // Logout
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        const { isConfirmed } = await Swal.fire({
+            title: 'تسجيل الخروج؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'خروج',
+            cancelButtonText: 'إلغاء',
+            customClass: { popup: 'rounded-2xl' }
+        });
+        if(isConfirmed) {
+            await AuthService.auth.signOut();
+            // FIXED: Redirect to login.html
+            window.location.replace('login.html');
+        }
+    });
 }
 
 // Phone Validation Helper
@@ -188,7 +206,6 @@ async function handleTableActions(e) {
     if (!btn) return;
     const id = btn.dataset.id;
 
-    // 1. Delete
     if (btn.classList.contains('btn-delete')) {
         Swal.fire({
             title: 'حذف السجل؟',
@@ -212,7 +229,6 @@ async function handleTableActions(e) {
         });
     }
 
-    // 2. Edit
     if (btn.classList.contains('btn-edit')) {
         const item = allStaff.find(d => d.id == id);
         if (item) {
@@ -221,7 +237,6 @@ async function handleTableActions(e) {
         }
     }
 
-    // 3. View Customers (Triggers Modal)
     if (btn.classList.contains('btn-customers')) {
         const item = allStaff.find(d => d.id == id);
         if (item) {
@@ -229,7 +244,6 @@ async function handleTableActions(e) {
         }
     }
 
-    // 4. View Phones
     if (btn.classList.contains('btn-phones')) {
         const item = allStaff.find(d => d.id == id);
         if (!item) return;
@@ -249,6 +263,7 @@ async function handleTableActions(e) {
         if (item.phone) phoneHtml += addPhoneRow(item.phone, 'رقم أساسي', 'blue');
         if (item.phone2) phoneHtml += addPhoneRow(item.phone2, 'رقم ثانوي', 'gray');
         if (item.phone3) phoneHtml += addPhoneRow(item.phone3, 'رقم إضافي', 'gray');
+
         phoneHtml += `</div>`;
 
         Swal.fire({
@@ -260,14 +275,12 @@ async function handleTableActions(e) {
         });
     }
 
-    // 5. Commission
     if (btn.classList.contains('btn-commission')) {
-        // ... (Existing commission logic logic)
         const item = allStaff.find(d => d.id == id);
         if (!item) return;
 
         const rules = item.commission_rules || {};
-        let htmlContent = '<div class="space-y-3 text-right dir-rtl">';
+        let htmlContent = `<div class="space-y-3 text-right dir-rtl">`;
         
         if (Object.keys(rules).length === 0) {
             htmlContent += '<p class="text-gray-500 text-center py-4">لم يتم تحديد عمولة بعد.</p>';

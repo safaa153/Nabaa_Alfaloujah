@@ -9,20 +9,15 @@ export const CarsData = {
     
     subscription: null,
     refreshTimer: null,
-    onDataChange: null, // NEW: Store the callback
+    onDataChange: null,
 
-    // Centralized Init
     init: function(onDataChangedCallback) {
         if (!supabase) return;
-        
-        // Save callback so we can call it manually later
         this.onDataChange = onDataChangedCallback; 
-
         this.fetchAllData().then(data => onDataChangedCallback(data));
         this.subscribeToChanges(onDataChangedCallback);
     },
 
-    // NEW: Manual Refresh Function (Guarantees instant update)
     refresh: async function() {
         if (this.onDataChange) {
             const data = await this.fetchAllData();
@@ -30,7 +25,6 @@ export const CarsData = {
         }
     },
 
-    // Combined Fetcher
     fetchAllData: async function() {
         try {
             const [cars, drivers] = await Promise.all([
@@ -38,7 +32,6 @@ export const CarsData = {
                 this.fetchDrivers()
             ]);
             
-            // Merge Driver Names into Cars
             const driversMap = {};
             drivers.forEach(d => { driversMap[d.id] = d.name; });
 
@@ -101,6 +94,23 @@ export const CarsData = {
             console.error("Fetch Drivers Error:", error);
             return [];
         }
+    },
+
+    // NEW: Get Customers by Driver ID for Modal
+    getCustomersByDriverId: async function(driverId) {
+        const { data, error } = await supabase
+            .from('customers')
+            .select(`
+                id, 
+                name, 
+                phone, 
+                address,
+                areas ( id, name )
+            `)
+            .eq('driver_id', driverId);
+        
+        if (error) throw error;
+        return data || [];
     },
 
     fetchUserProfile: async function() {

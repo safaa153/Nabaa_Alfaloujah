@@ -38,8 +38,8 @@ export const TanksData = {
         }
     },
 
-    // FIXED: Changed tank_id to tank_type_id
     getCustomerCounts: async function() {
+        // FIXED: Changed tank_id to tank_type_id
         const { data } = await supabase.from('customers').select('tank_type_id');
         const counts = {};
         if(data) {
@@ -50,21 +50,20 @@ export const TanksData = {
         return counts;
     },
 
-    // FIXED: Changed tank_id to tank_type_id
+    // NEW: Get Customers by Tank ID for Modal
     getCustomersByTankId: async function(tankId) {
         if (!supabase) return [];
+        // FIXED: Changed tank_id to tank_type_id
         const { data, error } = await supabase
             .from('customers')
             .select('id, name, phone, address')
-            .eq('tank_type_id', tankId); // Match the column name in DB
+            .eq('tank_type_id', tankId);
         
-        if (error) {
-            console.error("Supabase Error (getCustomersByTankId):", error);
-            throw error;
-        }
+        if (error) throw error;
         return data || [];
     },
 
+    // User Profile
     fetchUserProfile: async function() {
         if (!supabase) return null;
         try {

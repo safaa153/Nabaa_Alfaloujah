@@ -92,6 +92,14 @@ export const CarsUI = {
                     </div>
                 </td>
 
+                <!-- NEW: View Customers Button -->
+                <td class="text-center p-4">
+                     <button class="btn-customers w-9 h-9 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm flex items-center justify-center" 
+                            data-id="${item.id}" title="عرض الزبائن">
+                        <i class="ph-bold ph-users"></i>
+                    </button>
+                </td>
+
                 <td class="text-center p-4">
                     <button class="btn-edit bg-emerald-500 text-white w-9 h-9 rounded-xl hover:bg-emerald-600 transition-colors shadow-md shadow-emerald-500/20" data-id="${item.id}">
                         <i class="ph-bold ph-pencil-simple text-lg"></i>
@@ -133,7 +141,6 @@ export const CarsUI = {
         this.inputs.existingPhoto.value = data.photo_url || '';
         this.inputs.existingIdPhoto.value = data.id_photo_url || '';
 
-        // Reset Links
         this.inputs.previewPhoto.classList.add('hidden');
         this.inputs.previewId.classList.add('hidden');
 

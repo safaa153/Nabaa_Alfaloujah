@@ -1,6 +1,7 @@
 // accountent/js/overview/main.js
 import { OverviewData } from './data.js';
 import { OverviewUI } from './ui.js';
+import { AuthService } from '../../../Settings/auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -14,6 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // NEW: Initialize Dark Mode Toggle
     initThemeToggle();
+    
+    // Logout Handler
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        const { isConfirmed } = await Swal.fire({
+            title: 'تسجيل الخروج؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'خروج',
+            cancelButtonText: 'إلغاء',
+            customClass: { popup: 'rounded-2xl' }
+        });
+        if(isConfirmed) {
+            await AuthService.auth.signOut();
+            // FIXED: Redirect to login.html
+            window.location.replace('login.html');
+        }
+    });
 });
 
 function updateView(data) {
@@ -29,31 +48,25 @@ async function loadHeaderProfile() {
     }
 }
 
-// NEW: Theme Toggle Logic
 function initThemeToggle() {
     const toggleBtn = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
 
-    // 1. Check local storage
     if (localStorage.getItem('theme') === 'dark') {
         body.classList.add('dark-mode');
-        themeIcon.classList.replace('ph-moon', 'ph-sun');
+        if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
     }
 
-    // 2. Toggle Event
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
-            
             const isDark = body.classList.contains('dark-mode');
-            
-            // Switch Icon
             if (isDark) {
-                themeIcon.classList.replace('ph-moon', 'ph-sun');
+                if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
                 localStorage.setItem('theme', 'dark');
             } else {
-                themeIcon.classList.replace('ph-sun', 'ph-moon');
+                if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
                 localStorage.setItem('theme', 'light');
             }
         });

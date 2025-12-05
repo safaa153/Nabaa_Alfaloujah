@@ -14,7 +14,7 @@ function initApp() {
     refreshData();
     loadHeaderProfile();
     initThemeToggle();
-    CustomersModal.init(); // Initialize Modal
+    CustomersModal.init();
 }
 
 async function loadHeaderProfile() {
@@ -78,8 +78,9 @@ function setupEventListeners() {
                 customClass: { popup: 'rounded-2xl' }
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    await AuthService.logout();
-                    window.location.replace('../../index.html');
+                    await AuthService.auth.signOut();
+                    // FIXED: Redirect to login.html
+                    window.location.replace('login.html');
                 }
             });
         });
@@ -148,7 +149,6 @@ async function handleTableActions(e) {
         }
     }
     
-    // UPDATED: View Customers Button
     if (btn.classList.contains('btn-customers')) {
         const item = allAreas.find(a => a.id == id);
         if (item) {

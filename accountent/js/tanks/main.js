@@ -14,7 +14,7 @@ function initApp() {
     refreshTableData();
     loadHeaderProfile();
     initThemeToggle();
-    CustomersModal.init(); // Initialize Modal Listeners
+    CustomersModal.init(); // Initialize Modal
 }
 
 async function loadHeaderProfile() {
@@ -87,8 +87,9 @@ function setupEventListeners() {
                 customClass: { popup: 'rounded-2xl' }
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    await AuthService.logout();
-                    window.location.replace('../../index.html');
+                    await AuthService.auth.signOut();
+                    // FIXED: Redirect to login.html (assuming it's in the same folder)
+                    window.location.replace('login.html');
                 }
             });
         });
