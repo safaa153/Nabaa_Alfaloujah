@@ -6,13 +6,24 @@ export const CustomersUI = {
     get modalContent() { return document.getElementById('customer-modal-content'); },
     get form() { return document.getElementById('customer-form'); },
     
-    // Header
+    // Portal for dropdowns
+    get portal() { 
+        let el = document.getElementById('dropdown-portal');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'dropdown-portal';
+            el.style.position = 'relative'; 
+            el.style.zIndex = '9999';
+            document.body.appendChild(el);
+        }
+        return el;
+    },
+    
     get headerName() { return document.getElementById('header-user-name'); },
     get headerRole() { return document.getElementById('header-user-role'); },
     get headerAvatarImg() { return document.getElementById('header-user-img'); },
     get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
 
-    // Inputs
     inputs: {
         id: document.getElementById('customer-id'),
         tankNo: document.getElementById('cust-tank-no'),
@@ -47,16 +58,37 @@ export const CustomersUI = {
         }
     },
 
-    renderTable: function(list) {
+    renderTable: function(list, totalCount) {
         const tbody = this.tableBody;
         if (!tbody) return;
         tbody.innerHTML = '';
 
         if (!list || list.length === 0) {
             document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('pagination-controls').classList.add('hidden');
             return;
         }
         document.getElementById('empty-state').classList.add('hidden');
+
+        const controls = document.getElementById('pagination-controls');
+        const showAllBtn = document.getElementById('btn-show-all');
+        const countText = document.getElementById('showing-count');
+        
+        if (controls) {
+            if (list.length < totalCount) {
+                controls.classList.remove('hidden');
+                if(countText) countText.innerText = `عرض ${list.length} من أصل ${totalCount} زبون`;
+                if(showAllBtn) showAllBtn.classList.remove('hidden');
+            } else {
+                 if(totalCount > 50) {
+                     controls.classList.remove('hidden');
+                     if(showAllBtn) showAllBtn.classList.add('hidden');
+                     if(countText) countText.innerText = `عرض الكل (${totalCount} زبون)`;
+                 } else {
+                     controls.classList.add('hidden');
+                 }
+            }
+        }
 
         list.forEach((item, index) => {
             const hasLocation = item.latitude && item.longitude;
@@ -66,6 +98,27 @@ export const CustomersUI = {
             const locationUrl = hasLocation 
                 ? `https://www.google.com/maps?q=${item.latitude},${item.longitude}` 
                 : '#';
+            
+            let photoIcons = '';
+            if (item.doc1_url || item.doc2_url) {
+                photoIcons = `
+                    <div class="flex items-center justify-center gap-1">
+                        ${item.doc1_url ? `<a href="${item.doc1_url}" target="_blank" class="text-cyan-600 hover:text-cyan-800"><i class="ph-fill ph-image text-lg"></i></a>` : ''}
+                        ${item.doc2_url ? `<a href="${item.doc2_url}" target="_blank" class="text-cyan-600 hover:text-cyan-800"><i class="ph-fill ph-image text-lg"></i></a>` : ''}
+                    </div>
+                `;
+            } else {
+                photoIcons = `<span class="text-gray-300 text-xs">-</span>`;
+            }
+
+            const createdAtDate = item.created_at ? new Date(item.created_at).toLocaleString('ar-EG', {
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            }) : '-';
+            
+            const createdBy = item.created_by || '-';
+
+            // Ensure last_filling is displayed nicely. Data layer provides it as a string or '-'
+            const lastFillingDisplay = item.last_filling || '-';
 
             const row = document.createElement('tr');
             row.className = 'table-row-anim border-b border-gray-50 hover:bg-gray-50/50';
@@ -89,25 +142,89 @@ export const CustomersUI = {
                         <i class="ph-fill ph-map-pin text-lg"></i>
                     </a>
                 </td>
-                <td class="p-4 text-center text-xs text-gray-400">
-                    ${item.last_filling ? item.last_filling : '-'}
+                <td class="p-4 text-center">
+                    ${photoIcons}
+                </td>
+                
+                <td class="p-4 text-center dir-ltr text-xs text-gray-500 font-mono">
+                    ${createdAtDate}
+                </td>
+                <td class="p-4 text-center text-xs text-gray-500">
+                    <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-md border border-blue-100">${createdBy}</span>
+                </td>
+
+                <td class="p-4 text-center">
+                     <button class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center btn-new-request mx-auto" data-id="${item.id}" title="طلب تعبئة">
+                        <i class="ph-bold ph-plus"></i>
+                    </button>
+                </td>
+                <td class="p-4 text-center text-xs font-bold text-gray-700 dir-ltr">
+                    ${lastFillingDisplay}
                 </td>
                 <td class="p-4 text-center">
-                    <div class="flex items-center justify-center gap-2">
-                        <button class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center btn-new-request" data-id="${item.id}" title="طلب تعبئة">
-                            <i class="ph-bold ph-plus"></i>
-                        </button>
+                    <div class="flex items-center justify-center gap-2 relative">
                         <button class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center btn-edit" data-id="${item.id}" title="تعديل">
                             <i class="ph-bold ph-pencil-simple"></i>
                         </button>
                         <button class="w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center btn-delete" data-id="${item.id}" title="حذف">
                             <i class="ph-bold ph-trash"></i>
                         </button>
+                        
+                        <button class="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center btn-dots" data-id="${item.id}" title="خيارات إضافية">
+                            <i class="ph-bold ph-dots-three-vertical"></i>
+                        </button>
                     </div>
                 </td>
             `;
             tbody.appendChild(row);
         });
+    },
+
+    renderDropdown: function(rect, id, name) {
+        this.portal.innerHTML = `
+            <div id="active-dropdown" class="fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col items-stretch text-right w-64 animate-fade-in ring-1 ring-black/5">
+                 <button class="px-4 py-3 hover:bg-gray-50 text-sm font-bold text-gray-700 flex items-center gap-3 btn-action-withdraw transition-colors" data-id="${id}" data-name="${name}">
+                    <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-arrow-u-up-left text-orange-500"></i></div>
+                    <span>طلب سحب خزان</span>
+                </button>
+                <button class="px-4 py-3 hover:bg-gray-50 text-sm font-bold text-gray-700 flex items-center gap-3 btn-action-water transition-colors" data-id="${id}" data-name="${name}">
+                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-drop text-blue-500"></i></div>
+                    <span>طلب تبديل مياه مجاني</span>
+                </button>
+                <button class="px-4 py-3 hover:bg-gray-50 text-sm font-bold text-gray-700 flex items-center gap-3 btn-action-location transition-colors" data-id="${id}" data-name="${name}">
+                    <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-map-pin text-green-500"></i></div>
+                    <span>طلب تحديد موقع</span>
+                </button>
+            </div>
+        `;
+        
+        const dropdown = document.getElementById('active-dropdown');
+        const dropdownWidth = 256; 
+        const dropdownHeight = 180; 
+
+        const spaceBelow = window.innerHeight - rect.bottom;
+        let topPos = rect.bottom + 5;
+        
+        if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+            topPos = rect.top - dropdownHeight - 5; 
+        }
+
+        let leftPos = rect.left;
+
+        if (leftPos < 10) {
+            leftPos = 10; 
+        }
+        
+        if (leftPos + dropdownWidth > window.innerWidth) {
+            leftPos = window.innerWidth - dropdownWidth - 10;
+        }
+
+        dropdown.style.top = `${topPos}px`;
+        dropdown.style.left = `${leftPos}px`;
+    },
+    
+    closeDropdown: function() {
+        if(this.portal) this.portal.innerHTML = '';
     },
 
     openModal: function(isEdit = false, data = null) {
@@ -160,7 +277,6 @@ export const CustomersUI = {
     populateDropdowns: function(lookups) {
         const { tankTypes, areas, drivers } = lookups;
         
-        // Modal Dropdowns
         this.inputs.tankType.innerHTML = '<option value="">اختر النوع...</option>' + 
             tankTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
         this.inputs.area.innerHTML = '<option value="">اختر المنطقة...</option>' + 
@@ -168,13 +284,11 @@ export const CustomersUI = {
         this.inputs.driver.innerHTML = '<option value="">اختر السائق...</option>' + 
             drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
 
-        // Filter Dropdowns
         document.getElementById('filter-tank-type').innerHTML = '<option value="">نوع الخزان (الكل)</option>' + 
             tankTypes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
         document.getElementById('filter-area').innerHTML = '<option value="">المنطقة (الكل)</option>' + 
             areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
         
-        // NEW: Driver Filter Dropdown
         document.getElementById('filter-driver').innerHTML = '<option value="">السائق (الكل)</option>' + 
             drivers.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
     },
