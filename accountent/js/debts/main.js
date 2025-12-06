@@ -9,7 +9,17 @@ document.addEventListener('DOMContentLoaded', initApp);
 function initApp() {
     setupEventListeners();
     initThemeToggle();
+    loadHeaderProfile();
     loadData();
+}
+
+async function loadHeaderProfile() {
+    try {
+        const profile = await DebtsData.fetchUserProfile();
+        if(profile) DebtsUI.updateHeaderProfile(profile);
+    } catch(err) {
+        console.error("Profile load failed", err);
+    }
 }
 
 async function loadData() {
@@ -18,7 +28,7 @@ async function loadData() {
     document.getElementById('debts-table-body').innerHTML = '';
 
     allDebts = await DebtsData.fetchAggregatedDebts();
-    applyFilters(); // Renders the table
+    applyFilters(); 
 
     document.getElementById('loading-state').classList.add('hidden');
 }
@@ -32,6 +42,7 @@ function applyFilters() {
     });
 
     DebtsUI.renderTable(filtered);
+    return filtered; // Return for export use
 }
 
 function setupEventListeners() {
@@ -50,21 +61,93 @@ function setupEventListeners() {
         await handlePayClick(customerId, customerName, currentDebt);
     });
 
-    // Logout
-    document.getElementById('btn-logout').addEventListener('click', async () => {
-        const { isConfirmed } = await Swal.fire({
-            title: 'تسجيل الخروج؟',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            confirmButtonText: 'خروج',
-            cancelButtonText: 'إلغاء'
+    // NEW: Export Excel Listener
+    const btnExport = document.getElementById('btn-export-excel');
+    if(btnExport) {
+        btnExport.addEventListener('click', handleExportExcel);
+    }
+
+    // Logout - Fixed Logic to prevent Loop
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            Swal.fire({
+                title: 'تسجيل الخروج؟',
+                text: "هل أنت متأكد من المغادرة؟",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444', 
+                cancelButtonColor: '#3b82f6', 
+                confirmButtonText: 'خروج',
+                cancelButtonText: 'إلغاء',
+                customClass: {
+                    popup: 'rounded-3xl font-sans',
+                    title: 'text-xl font-bold text-gray-800',
+                    htmlContainer: 'text-gray-500'
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await AuthService.logout();
+                    } catch (error) {
+                        console.error("Logout error:", error);
+                    } finally {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        window.location.replace('login.html'); 
+                    }
+                }
+            });
         });
-        if(isConfirmed) {
-            await AuthService.logout();
-            window.location.replace('login.html');
+    }
+}
+
+// NEW: Handle Export Logic
+function handleExportExcel() {
+    try {
+        Swal.showLoading();
+        
+        // Get currently filtered data
+        const txt = document.getElementById('search-text').value.toLowerCase();
+        const filteredToExport = allDebts.filter(item => {
+            return item.customer_name.toLowerCase().includes(txt) || 
+                   (item.tank_no && item.tank_no.toLowerCase().includes(txt));
+        });
+
+        if (filteredToExport.length === 0) {
+            Swal.fire('تنبيه', 'لا توجد بيانات لتصديرها', 'warning');
+            return;
         }
-    });
+
+        // Map data to Arabic headers for the Excel file
+        const exportData = filteredToExport.map(item => ({
+            "رقم الخزان": item.tank_no || '-',
+            "اسم الزبون": item.customer_name,
+            "نوع الخزان": item.tank_type || '-',
+            "المنطقة": item.area_name || '-',
+            "العنوان": item.address || '-',
+            "رقم الهاتف": item.phone || '-',
+            "تاريخ أقدم دين": item.oldest_date ? new Date(item.oldest_date).toLocaleDateString('ar-EG') : '-',
+            "إجمالي الدين": item.total_debt
+        }));
+
+        // Create Workbook
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "الديون");
+        
+        // Generate File Name with Date
+        const dateStr = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(workbook, `Debts_List_${dateStr}.xlsx`);
+        
+        Swal.close();
+
+    } catch (error) {
+        console.error("Export Error:", error);
+        Swal.fire('خطأ', 'حدث خطأ أثناء تصدير الملف', 'error');
+    }
 }
 
 async function handlePayClick(customerId, name, totalDebt) {
@@ -96,7 +179,7 @@ async function handlePayClick(customerId, name, totalDebt) {
             Swal.showLoading();
             await DebtsData.processPayment(customerId, amount);
             DebtsUI.showSuccess('تم التسديد', 'تم تحديث سجل الديون بنجاح');
-            loadData(); // Refresh list to remove zero debts or update totals
+            loadData(); 
         } catch (error) {
             DebtsUI.showError('خطأ', 'فشل في معالجة الدفع: ' + error.message);
         }
@@ -107,18 +190,22 @@ function initThemeToggle() {
     const btn = document.getElementById('theme-toggle');
     const icon = document.getElementById('theme-icon');
     const body = document.body;
+    
     if (localStorage.getItem('theme') === 'dark') {
         body.classList.add('dark-mode');
-        icon.classList.replace('ph-moon', 'ph-sun');
+        if(icon) icon.classList.replace('ph-moon', 'ph-sun');
     }
-    btn.addEventListener('click', () => {
-        body.classList.toggle('dark-mode');
-        if (body.classList.contains('dark-mode')) {
-            localStorage.setItem('theme', 'dark');
-            icon.classList.replace('ph-moon', 'ph-sun');
-        } else {
-            localStorage.setItem('theme', 'light');
-            icon.classList.replace('ph-sun', 'ph-moon');
-        }
-    });
+
+    if(btn) {
+        btn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+                if(icon) icon.classList.replace('ph-moon', 'ph-sun');
+            } else {
+                localStorage.setItem('theme', 'light');
+                if(icon) icon.classList.replace('ph-sun', 'ph-moon');
+            }
+        });
+    }
 }

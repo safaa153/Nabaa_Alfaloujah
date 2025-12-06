@@ -64,21 +64,17 @@ export const RequestsUI = {
 
             const statusHtml = `<span class="px-2 py-1 rounded-md text-[10px] font-bold ${statusClass}">${statusLabel}</span>`;
 
-            // Location Logic (CORRECTED)
+            // Location Logic
             let locationHtml = '';
             const hasLocation = item.lat && item.lng;
             const isSetLocationRequest = item.request_type === 'set_location';
             
-            // Show Set Location (Red Pin) ONLY if:
-            // 1. It is explicitly a "Set Location" request (even if location exists)
-            // 2. OR the customer has NO location yet
             if (isSetLocationRequest || !hasLocation) {
                 locationHtml = `
                     <button class="btn-set-location w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors mx-auto" data-customer="${item.customer_id}" title="تحديث الموقع">
                         <i class="ph-bold ph-map-pin text-lg"></i>
                     </button>`;
             } else {
-                // Otherwise (Normal request + Has location), show Waze
                 locationHtml = `
                     <a href="https://waze.com/ul?ll=${item.lat},${item.lng}&navigate=yes" target="_blank" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors mx-auto" title="Waze">
                         <i class="ph-fill ph-navigation-arrow text-lg"></i>
@@ -141,7 +137,7 @@ export const RequestsUI = {
                 </label>
             `;
 
-            // Buttons
+            // --- BIGGER ACTION BUTTONS ---
             let actionButtons = '';
             const deleteBtn = `
                 <button class="btn-delete w-8 h-8 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-colors" data-id="${item.id}" title="حذف">
@@ -152,8 +148,9 @@ export const RequestsUI = {
                 actionButtons = `
                     <div class="flex items-center gap-2">
                         ${debtCheckbox} 
-                        <button class="btn-confirm-delivery w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-colors" data-id="${item.id}" title="تأكيد التوصيل">
-                            <i class="ph-bold ph-check text-lg"></i>
+                        <button class="btn-confirm-delivery py-2 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95 text-xs" data-id="${item.id}" title="تأكيد التوصيل">
+                            <i class="ph-bold ph-check text-base"></i>
+                            <span>توصيل</span>
                         </button>
                         ${deleteBtn}
                     </div>
@@ -162,9 +159,9 @@ export const RequestsUI = {
                 actionButtons = `
                     <div class="flex items-center gap-2">
                         ${debtCheckbox}
-                        <button class="btn-confirm-finish px-3 py-1 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 flex items-center justify-center gap-1 transition-colors shadow-lg shadow-cyan-600/20" data-id="${item.id}" title="إنهاء الطلب">
-                            <span class="text-xs font-bold">إنهاء</span>
-                            <i class="ph-bold ph-check-double"></i>
+                        <button class="btn-confirm-finish py-2 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 transition-transform active:scale-95 text-xs" data-id="${item.id}" title="إنهاء الطلب">
+                            <i class="ph-bold ph-check-double text-base"></i>
+                            <span>إنهاء</span>
                         </button>
                         ${deleteBtn}
                     </div>

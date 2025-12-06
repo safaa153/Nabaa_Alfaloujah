@@ -1,6 +1,25 @@
 export const DebtsUI = {
     get tableBody() { return document.getElementById('debts-table-body'); },
     get totalLabel() { return document.getElementById('total-debts-sum'); },
+    
+    // Header Elements
+    get headerName() { return document.getElementById('header-user-name'); },
+    get headerRole() { return document.getElementById('header-user-role'); },
+    get headerAvatarImg() { return document.getElementById('header-user-img'); },
+    get headerAvatarContainer() { return document.getElementById('header-user-avatar'); },
+
+    // Update Profile Header
+    updateHeaderProfile: function(profile) {
+        if (!profile) return;
+        if (this.headerName) this.headerName.innerText = profile.name || 'المسؤول';
+        if (this.headerRole) this.headerRole.innerText = profile.job_title || 'ACCOUNTANT';
+        if (profile.photo_url) {
+            this.headerAvatarImg.src = profile.photo_url;
+            this.headerAvatarImg.classList.remove('hidden');
+            const span = this.headerAvatarContainer.querySelector('span');
+            if(span) span.style.display = 'none';
+        }
+    },
 
     renderTable: function(list) {
         const tbody = this.tableBody;

@@ -34,42 +34,42 @@
         .filter-btn:hover { border-color: #0891b2; color: #0891b2; background-color: #fff; }
         .filter-btn.active { background-color: #0891b2; color: white; border-color: #0891b2; }
 
-        /* Modern Tabs Styling */
+        /* --- MODERN SEGMENTED TABS --- */
         .tab-container {
-            background-color: #f3f4f6; /* gray-100 */
+            background-color: #f3f4f6; /* Gray-100 */
             padding: 0.5rem;
             border-radius: 1rem;
             display: flex;
             gap: 0.5rem;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .tab-btn { 
             flex: 1;
-            padding: 1rem; /* Bigger touch area */
+            padding: 0.75rem 1rem;
             border-radius: 0.75rem;
-            font-size: 0.875rem; /* text-sm */
-            font-weight: 800;
-            color: #6b7280; /* gray-500 */
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #6b7280; /* Gray-500 */
             background-color: transparent;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid transparent;
+            transition: all 0.2s ease-in-out;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
         }
 
-        .tab-btn:hover:not(.active) {
-            background-color: rgba(255, 255, 255, 0.6);
+        .tab-btn:hover {
             color: #374151;
+            background-color: rgba(255, 255, 255, 0.5);
         }
 
         .tab-btn.active { 
             background-color: #ffffff;
-            color: #0891b2; /* cyan-600 */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            border-color: #e5e7eb;
-            transform: translateY(-1px);
+            color: #0891b2; /* Cyan-600 */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         
         .tab-btn i { font-size: 1.25rem; }
@@ -93,7 +93,7 @@
                  <div class="logo-container w-16 h-16 bg-gradient-to-br from-cyan-400 to-sky-600 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-3 transition-all duration-300">
                     <i class="ph ph-drop text-3xl text-white logo-icon"></i>
                 </div>
-                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الفلوجة</h1>
+                <h1 class="text-xl font-bold text-gray-800 transition-opacity duration-200">محطة نبع الخيرات</h1>
                 <p class="text-xs text-gray-500 mt-1 transition-opacity duration-200">لوحة تحكم المحاسب</p>
             </div>
             <nav id="sidebar-nav"></nav>
@@ -130,15 +130,14 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- LOGOUT BUTTON MODIFIED HERE -->
                         <button id="btn-logout" class="w-10 h-10 bg-red-500 text-white rounded-xl flex items-center justify-center hover:bg-red-600 transition-all shadow-lg shadow-red-500/30">
                             <i class="ph-bold ph-sign-out text-xl"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- MODERN TABS CONTAINER -->
-                <div class="tab-container mt-4 mb-6 mx-0">
+                <!-- MODERN TABS HTML STRUCTURE -->
+                <div class="tab-container">
                     <button class="tab-btn active" data-tab="driver" data-status="pending">
                         <i class="ph-bold ph-truck"></i> 
                         <span>السائقين (معلقة)</span>

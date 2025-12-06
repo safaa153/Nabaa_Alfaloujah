@@ -103,7 +103,6 @@ export const DebtsData = {
                     .eq('id', debt.id);
                 
                 // 2. Update Original Filling Request (Remove "Debt" flag)
-                // This makes the request look "Finished" (Green) instead of "Debt" (Red) in the requests/fillings table
                 if (debt.filling_id) {
                     await supabase
                         .from(FILLINGS_TABLE)
@@ -120,16 +119,19 @@ export const DebtsData = {
                     .update({ remaining_amount: newBalance })
                     .eq('id', debt.id);
                 
-                // For partial payment, we DO NOT update the fillings table. 
-                // The request remains flagged as "Debt" until fully paid.
-                
                 remainingPayment = 0;
             }
         }
     },
 
     fetchUserProfile: async function() {
-        const { data } = await supabase.from('drivers').select('name, job_title').eq('job_title', 'محاسب').limit(1).maybeSingle();
+        // FIX: Added 'photo_url' to the selection
+        const { data } = await supabase
+            .from('drivers')
+            .select('name, job_title, photo_url')
+            .eq('job_title', 'محاسب')
+            .limit(1)
+            .maybeSingle();
         return data;
     }
 };

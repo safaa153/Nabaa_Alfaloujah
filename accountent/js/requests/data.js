@@ -161,11 +161,10 @@ export const RequestsData = {
         // 2. Calculate Amount (Force Number type)
         let amount = 0;
         if (req.request_type === 'new_filling') {
-            // Access price safely and convert to Number
             const price = req.customers?.tank_types?.price;
             amount = price ? Number(price) : 0;
         } else if (req.request_type === 'external_sale') {
-            amount = 0; // External sales in requests usually don't carry price in this logic, but if they did, parse it here
+            amount = 0; 
         }
 
         // 3. Insert into Fillings
@@ -192,21 +191,20 @@ export const RequestsData = {
         if (insertError) throw insertError;
 
         // 4. IF DEBT: Insert into Debts Table
-        // Only insert if amount > 0. Zero debts are unnecessary.
         if (isDebt && newFilling && amount > 0) {
             const debtPayload = {
                 customer_id: req.customer_id,
                 filling_id: newFilling.id,
                 amount: amount,
-                remaining_amount: amount, // Start with full amount remaining
+                remaining_amount: amount,
                 is_paid: false,
+                created_at: req.created_at, // FIX: Use the ORIGINAL request date
                 notes: `Generated from request #${req.customers?.tank_no || ''}`
             };
             
             const { error: debtError } = await supabase.from(DEBTS_TABLE).insert([debtPayload]);
             if (debtError) {
                 console.error("Error creating debt record:", debtError);
-                // We don't throw here to avoid rolling back the filling, but user should know
             }
         }
 
